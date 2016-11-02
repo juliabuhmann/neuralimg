@@ -39,8 +39,6 @@ dependencies:
 - ipywidgets=4.1.1=py27_0
 - jbig=2.1=0
 - jinja2=2.8=py27_1
-- protobuf=3.0.0b2=py27_0
-- tensorflow=0.8.0=py27_0
 - joblib=0.9.4=py27_0
 - jpeg=8d=0
 - jsonschema=2.5.1=py27_0
