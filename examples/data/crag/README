@@ -1,0 +1,3 @@
+Example data has been extracted from the CREMI challenge (https://cremi.org/metrics/)
+Groundtruth is a preprocessed version of the groundtruth provided.
+Membrane images are predictions of the boundaries given the raw images.
