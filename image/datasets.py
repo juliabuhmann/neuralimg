@@ -388,7 +388,6 @@ def get_closest(ref, others):
     """ Retrieves node closests to the reference node according to L2 distance"""
     ref_center = get_center(ref)
     dists = [np.sqrt(sum((ref_center-get_center(i))**2)) for i in others]
-    print(dists)
     return others[dists.index(min(dists))]
 
 
