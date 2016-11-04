@@ -185,7 +185,7 @@ class CragGenerator(object):
 
         args = [
             "cmc_extract_features", "-c", config_file,
-            "-p", self.project_file, "--appendBestEffortFeature"
+            "-p", self.project_file,
         ]
 
         p = Process(args, os.path.join(self.logs, "extract_features.log"))
