@@ -32,13 +32,21 @@ class MergeTreeExtractor(object):
         dataio.create_dir(outp)
         self.extract_trees(outp)
 
-        # Cleaning tmp
-        shutil.rmtree(self.tmp)
+        # Cleaning environment
+        self.clean()
 
+    def clean(self):
+        """ Cleans the environment """
+        shutil.rmtree(self.tmp)
+        self.clean_specific()
 
     @abc.abstractmethod
     def extract_trees(self, outp):
         """ Extracts a merge tree for each input image in the destination folder """
+
+    @abc.abstractmethod
+    def clean_specific(self):
+        """ Actions to perform before finishing """
 
     def parse_data(self):
         """ Processes the input data """
@@ -46,7 +54,6 @@ class MergeTreeExtractor(object):
         self.mem = self.valid_input(self.mem)
         if self.gt is not None:
             self.gt = self.valid_input(self.gt)
-
 
     @abc.abstractmethod
     def process_h5(self, inp):

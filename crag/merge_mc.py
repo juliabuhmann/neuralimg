@@ -98,3 +98,5 @@ class MCTreeExtractor(MergeTreeExtractor):
 
         return path
 
+    def clean_specific(self):
+        print('Do nothing on exit ...')

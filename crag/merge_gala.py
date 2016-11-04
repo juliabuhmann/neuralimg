@@ -41,6 +41,7 @@ class GalaTreeExtractor(MergeTreeExtractor):
         MergeTreeExtractor.__init__(self, sp, mem, gt=gt)
         self.min_ep = min_epochs
         self.model_p = model
+        self._file_fds = []
 
     def process_h5(self, inp):
         return inp
@@ -48,7 +49,8 @@ class GalaTreeExtractor(MergeTreeExtractor):
     def process_folder(self, inp):
         print('Processing ' + inp)
         files = dataio.FileReader(inp).read()
-        out = tempfile.mkstemp(dir=self.tmp, suffix='.h5')[1]
+        fd, out = tempfile.mkstemp(dir=self.tmp, suffix='.h5')
+        self._file_fds.append(fd)
         print('Storing into ' + out)
         with h5py.File(out) as f:
             f.create_dataset('stack', data=files, compression='gzip')
@@ -157,3 +159,6 @@ class GalaTreeExtractor(MergeTreeExtractor):
 
         return path
 
+    def clean_specific(self):
+        for fd in self._file_fds:
+            os.close(fd)
