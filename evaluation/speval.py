@@ -8,30 +8,36 @@ import tempfile
 import shutil
 
 from neuralimg import dataio
+
 from neuralimg.evaluation import rand
 from neuralimg.evaluation import voi
+
 from neuralimg.crag import crag as cr
-from neuralimg.crag import merge_trees as mt
+from neuralimg.crag import merge_mc as mt
+
 from neuralimg.dataio import *
 from neuralimg.base import pyprocess as ps
+
 from neuralimg.image import segment as seg
+from neuralimg.image import preproc as pr
 
-# TODO: Implement grid search for both segmentation parameters + threshold 
-# parameters
 
-def call_ted(segmented, truth, shift, files, split_background=False, threads=5):
+def call_ted(segmented, truth, shift, files=None, split_background=False, threads=5):
     """ Calls TED on the given groundtruth and superpixel files
     and stores the corrected versions of the images and tge splits and merges in the
     given folder
+    Args:
+        segmented: Path to segmented image
+        truth: Path to groundtruth
+        shift: Tolerance TED shift
+        files: Where to store the output files. Set None to disable
+        split_background: Whether to split merges/splits between non-background and background
+        threads: Maximum threads to use
     """
 
-    if files is None and split_background is True:
-        raise ValueError('Output for TED output files must be provided' +
-            'to retrieve separate scores for background and non-background' +
-            'superpixels')
-
-    if files is not None:
-        create_dir(files)
+    if split_background is True and files is None:
+        raise ValueError('Needed an output folder in order to compute' + 
+            ' separate merges and splits for background and non-background regions')
 
     ted_args = [ 
         "ted",
@@ -41,10 +47,9 @@ def call_ted(segmented, truth, shift, files, split_background=False, threads=5):
         "--reportVoi",
         "--reportRand",
         "--reportDetectionOverlap=false",
-        "--numThreads=" +  str(threads)
+        "--numThreads=" +  str(threads),
     ]
 
-    print('Calling TED with files attribute %s' % files)
     if files is not None:
         ted_args.append("--tedErrorFiles=" + files)
 
@@ -53,7 +58,6 @@ def call_ted(segmented, truth, shift, files, split_background=False, threads=5):
 
     # TED FP and TED FN have been erased because --haveBackground option has 
     # been disabled
-
     stats = { token : search_tag(output, token) for token in [ 'TED FS', 'TED FM',
         'VOI split', 'VOI merge', 'RAND'] }
 
@@ -66,8 +70,114 @@ def call_ted(segmented, truth, shift, files, split_background=False, threads=5):
     return stats
 
 
+def get_ted_stats(sp_path, gt, ted_shift, outp, split_bg, num_regions, ted_workers=1):
+    """ Compute extended stats from ted """
+    # Compute merge tree image using input threshold and save image
+    stats = call_ted(sp_path, gt, ted_shift, files=outp, 
+        split_background=split_bg, threads=ted_workers)
+
+    # STATS - Add some information to stats
+    stats['NUM'] = num_regions
+    stats['TED SHIFT'] = ted_shift
+    return stats
+
+
+def optimal_segmentation(masks, sigmas, membranes, truth, ted_shift, split_bg=False, 
+    mweight=10, merge_values=15, stop=False, workers=3, ted_workers=1, tmp_path=None):
+    """ 
+        Evaluates the full segmentation parametrization and returns the one that is optimal.
+        More precisel, performs a grid search over masks and sigmas of the watershed algorithm.
+        For each setting, performs a search over a set of possible thresholds, getting the best balance
+        between merge and split error given the weight of the merge errors given. The minimum of these
+        thresholds is considered the optimal segmentation. 
+        Args:
+            masks: List of masks to test
+            sigmas: List of sigmas to test
+            membranes: Membrane predictions
+            truth: Folder containing groundtruth images
+            ted_shift: minimum shift in the neuron boundaries for considering errors
+            split_bg: Whether to split between errors and background errors
+            mweight: weight to apply to merges. To be between 1 and 20.
+            merge_values: Number of cuts to test for the merge tree histories
+            stop: Whether to stop when first minimum found for a given threshold value.
+            workers: Number of workers to use. Default: 3
+            ted_workers: Number of workers to use for each image evaluation. Should be kept
+                low since the total number of threads will be of the order of workers * ted_workers
+            tmp_path: Folder to use as temporary path for intermediate files. Set to None to use OS default.
+        Return:
+            mask, sigma and threshold to use
+    """
+    with Parallel(n_jobs=workers) as parallel:
+        jobs = []
+        for ms in masks:
+            for s in sigmas:
+                jobs.append(delayed(get_threshold)(ms, s, membranes, truth, ted_shift, 
+                    split_bg, mweight, merge_values, stop, ted_workers, tmp_path))
+
+        #  Append average for the current configuration
+        stats = parallel(jobs)
+    print('All stats: }'.format(stats))
+    score = [i[0]['merges'] for i in stats] # Select the ones with less merges
+    return stats[score.index(min(score))]
+
+
+def get_threshold(mask, sigma, mems, truth, ted_shift, split_bg=False, mweight=10, 
+    merge_values=15, stop=False, ted_workers=1, tmp_path=None):
+    """ Gets the best threshold in the merge trees computed on the segmentation 
+    given by the input parameters 
+    Args:
+        masks: List of masks to test
+        sigmas: List of sigmas to test
+        membranes: Membrane predictions
+        truth: Folder containing groundtruth images
+        ted_shift: minimum shift in the neuron boundaries for considering errors
+        split_bg: Whether to split between errors and background errors
+        mweight: weight to apply to merges. To be between 1 and 20.
+        merge_values: Number of cuts to test for the merge tree histories
+        stop: Whether to stop when first minimum found for a given threshold value.
+        workers: Number of workers to use. Default: 3
+        ted_workers: Number of workers to use for each image evaluation. Should be kept
+            low since the total number of threads will be of the order of 
+            workers * ted_workers
+        tmp_path: Folder to use as temporary path for intermediate files. Set to None 
+            to use OS default.
+    Return:
+        best setting, all settings, sigma and mask
+    """
+    print('Evaluating sigma %f and mask %d' % (sigma, mask))
+
+    # Prepare temporary folder
+    if tmp_path is not None:
+        create_dir(tmp_path)
+        outp = os.path.join(tmp_path, '_'.join(['s', str(sigma), 'm', str(mask)]))
+        create_dir(outp)
+    else:
+        outp = tempfile.mkdtemp()
+
+    sps = os.path.join(outp, 'sps')
+    hists = os.path.join(outp, 'hists')
+
+    # Save superpixels
+    proc = pr.DatasetProc(mems)
+    proc.read()
+    proc.segment(mask, sigma)
+    proc.save_data(sps)
+
+    # Create merge trees
+    mt.MCTreeExtractor(sps, mems).extract(hists)
+
+    # Get optimal threshold
+    best, all_stats = search_threshold(sps, truth, hists, ted_shift, mweight, 
+        merge_values, split_bg, out_stats=None, stop=stop, ted_workers=ted_workers)
+
+    # Clean temporary folder
+    shutil.rmtree(outp)
+
+    return best, all_stats, sigma, mask
+
+
 def search_threshold(superpixels, truth, histories, ted_shift, mweight=10, merge_values=15, 
-    split_bg=False, out_stats=None, stop=False, workers=3):
+    split_bg=False, out_stats=None, stop=False, ted_workers=1):
     """ 
         Evaluates the given segmentation parametrization and finds the approximate optimal
         threshold on the merge tree history. Tracks a set of cuts in increasing order
@@ -80,12 +190,12 @@ def search_threshold(superpixels, truth, histories, ted_shift, mweight=10, merge
             histories: Folder containing merge histories for the segmeneted images
             ted_shift: minimum shift in the neuron boundaries for considering errors
             mweight: weight to apply to merges. To be between 1 and 20.
-            merge_values: merge values to test for the input configuration
+            merge_values: Number of cuts to test for the merge tree histories
             split_bg: whether to split the TED measures for background and
                 non-background errors
             out_stats: Path where to store the results for the evaluation. None to disable
             stop: Whether to stop when best weighted configuration has been met
-            workers: Number of workers to use. Default: 3
+            ted_workers: Number of workers to use for each image evaluation. Should be kept low.
         Return:
             best: Stats and threshold for the best configuration, where the 
                 distance between weighted merges and the splits is minimum 
@@ -107,22 +217,18 @@ def search_threshold(superpixels, truth, histories, ted_shift, mweight=10, merge
 
         print('--- Evaluating threshold {}'.format(str(i)))
 
-        # Create tempath at each iteration
-        out_ted = tempfile.mkdtemp()
-
         # Compute weighted score and choose minimum
         stats = evaluate_merge(superpixels, truth, histories, i, ted_shift,
-            split_bg, outp=out_ted, workers=workers)
+            split_bg=split_bg, outp=None, ted_workers=ted_workers)
         weighted_sign = stats['TED FM'] * mweight - stats['TED FS']
         weighted = np.abs(weighted_sign)
-
-        # Clean temporary folder
-        shutil.rmtree(out_ted)
 
         # Store values
         current = {'thresh': i, 'weighted': weighted, 'merges': stats['TED FM'], \
             'splits': stats['TED FS']}
         data.append(current)
+
+        print('Obtained: {}'.format(current))
 
         if best is None or best['weighted'] > current['weighted']:
             best = current
@@ -147,6 +253,110 @@ def search_threshold(superpixels, truth, histories, ted_shift, mweight=10, merge
     return best, data
 
 
+def evaluate_merge_parallel(sp, gt, hist, thresh, ted_shift, nworkers=5, 
+    split_bg=False, ted_workers=1, outp=None):
+    """
+    Given the input images and the merge history, gets the score resulting
+    from merging up to the given threshold
+        Args:
+            sp: Path to superpixel folder
+            gt: Path to corresponding groundtruth folder
+            hist: Merge histories for the input images (file or list of histories)
+            thresh: Merge threshold
+            ted_shift: Shift pixels to use for evaluation
+            nworkers: Number of parallel jobs to use
+            split_bg: whether to split the TED measures for background and non-background errors
+            workers: Number of workers to use. By default: 3
+            ted_workers: Number of workers to use for each image evaluation. Should be kept low.
+            outp: Path where to store results. Set to None to disable
+        Return:
+            Stats of the segmentation
+    """
+    with Parallel(n_jobs=nworkers) as parallel:
+
+        images, gts, hists = read_folders(sp, gt, hist)
+
+        # One job for each segmented image
+        jobs = []
+        for (i, g, h) in zip(images, gts, hists):
+            jobs.append(delayed(evaluate_segmentation)(i, g, h, thresh, ted_shift,
+                split_bg, outp=None, ted_workers=ted_workers))
+        total_stats = parallel(jobs)
+
+    avg_stats = average_stats(total_stats)
+    if outp is not None:
+        save_stats([avg_stats], outp)
+    return avg_stats
+
+
+def evaluate_merge(sp, gt, hist, thresh, ted_shift, split_bg=False, outp=None, ted_workers=1):
+    """
+    Given the input images and the merge history, gets the score resulting
+    from merging up to the given threshold
+        Args:
+            sp: Path to superpixel folder
+            gt: Path to corresponding groundtruth folder
+            hist: Merge histories for the input images (file or list of histories)
+            thresh: Merge threshold
+            ted_shift: Shift pixels to use for evaluation
+            split_bg: whether to split the TED measures for background and non-background errors
+            outp: Path where to store the TED output files (merges and splits). Set None to disable.
+            workers: Number of workers to use. By default: 3
+            ted_workers: Number of workers to use for each image evaluation. Should be kept low.
+        Return:
+            Stats of the segmentation
+    """
+
+    images, gts, hists = read_folders(sp, gt, hist)
+    total_stats = [evaluate_segmentation(i, g, h, thresh, ted_shift, split_bg, 
+        outp, ted_workers) for (i, g, h) in zip(images, gts, hists)]
+    return average_stats(total_stats)
+
+
+def evaluate_segmentation(sp_img, gt, hist, thresh, ted_shift, split_bg, outp, 
+    ted_workers):
+    """
+    Evaluates the segmentation of the input file (path) with respect to the the groundtruth image,
+    and the threshold to cut from the merge history.
+        Args:
+            sp_img: Path to superpixel image
+            gt: Path to corresponding groundtruth image
+            hist: Merge history for the input image (path or list format)
+            thresh: Merge threshold. Set to negative to avoid using thresholding. 
+                Then merge history will be ignored
+            ted_shift: Shift pixels to use for evaluation
+            split_bg: whether to split the TED measures for background and non-background errors
+            outp: Path where to store the TED output files (merges and splits). Set None to disable.
+            ted_workers: Number of workers to use for each image evaluation. Should be kept low.
+        Return:
+            Stats of the segmentation
+    """
+
+    # Get superpixel image
+    merged = mt.merge_superpixels(sp_img, hist, thresh) \
+        if thresh >= 0.0 else mh.imread(sp_img)
+
+    # Create temporary file for the merged superpixels
+    # If threshold negative, no merge
+    sp_path = sp_img
+    if thresh >= 0.0:
+        fd, sp_path = tempfile.mkstemp(suffix='.tif')
+        mh.imsave(sp_path, merged)
+
+    print('Evaluating image %s as %s' % (sp_img, sp_path))
+    num_regions = len(np.unique(merged))
+    stats = get_ted_stats(sp_path, gt, ted_shift, outp, split_bg, 
+        num_regions, ted_workers=ted_workers)
+    stats['MT THRESH'] = thresh
+
+    # Do not forget to erase temporary file, if used
+    if thresh >= 0.0:
+        os.close(fd)
+        os.remove(sp_path)
+
+    return stats
+
+
 def evaluate_supervoxels(sp_folder, gt_folder):
     """ Evaluates the segmented images against their groundtruth and provides
     the Adjusted Rand and Variation of Information (VOI) metrics [split, merge]
@@ -165,78 +375,6 @@ def evaluate_supervoxels(sp_folder, gt_folder):
         vs += v[0]
         vm += v[1]
     return r, [vs, vm]
-
-
-def evaluate_merge(sp, gt, hist, thresh, ted_shift, split_bg, outp, workers=2):
-    """
-    Given the input images and the merge history, gets the score resulting
-    from merging up to the given threshold
-        Args:
-            sp: Path to superpixel folder
-            gt: Path to corresponding groundtruth folder
-            hist: Merge histories for the input images (file or list of histories)
-            thresh: Merge threshold
-            ted_shift: Shift pixels to use for evaluation
-            split_bg: whether to split the TED measures for background and non-background errors
-            outp: Path where to store the TED output files (merges and splits)
-            workers: Number of workers to use. By default: 3
-        Return:
-            Stats of the segmentation
-    """
-
-    images, gts, hists = read_folders(sp, gt, hist)
-
-    with Parallel(n_jobs=workers) as parallel:
-
-        # Read stats for each segmentation in the given folders and compute in 
-        # parallel way
-        jobs = []
-        for (i, g, h) in zip(images, gts, hists):
-            jobs.append(delayed(evaluate_segmentation)(i, g, h, thresh, ted_shift, split_bg, outp=outp))
-        total_stats = parallel(jobs)
-
-        return average_stats(total_stats)
-
-
-def evaluate_segmentation(sp_img, gt, hist, thresh, ted_shift, split_bg, outp):
-    """
-    Evaluates the segmentation of the input file (path or image), the groundtruth image,
-    the merge history (path or list) and the merge threshold. The output of the TED can be stored
-    in a folder or disabled by setting 'outp' to None. 'split_bg' to True separates the errors between
-    background and non-background (background with label 0)
-        Args:
-            sp_img: Path to superpixel image
-            gt: Path to corresponding groundtruth image
-            hist: Merge history for the input image
-            thresh: Merge threshold
-            ted_shift: Shift pixels to use for evaluation
-            split_bg: whether to split the TED measures for background and non-background errors
-            outp: Path where to store the TED output files (merges and splits)
-        Return:
-            Stats of the segmentation
-    """
-
-    # Get superpixel image
-    merged = mt.merge_superpixels(sp_img, hist, thresh) \
-        if thresh >= 0.0 else mh.imread(sp_img)
-
-    # Create temporary file for the merged superpixels
-    # If threshold negative, no merge
-    sp_path = sp_img
-    if thresh >= 0.0:
-        sp_path = tempfile.mkstemp(suffix='.tif')[1]
-        mh.imsave(sp_path, merged)
-
-    print('Evaluating image %s as %s' % (sp_img, sp_path))
-    print('Saving into %s' % outp)
-    stats = get_ted_stats(sp_path, gt, ted_shift, outp, split_bg, len(np.unique(merged)))
-    stats['MT THRESH'] = thresh
-
-    # Do not forget to erase temporary file
-    if thresh >= 0.0:
-        os.remove(sp_path)
-
-    return stats
 
 
 def evaluate_crag(sps, gts, raws, mems, hists, create_conf, features_conf, 
@@ -433,17 +571,6 @@ def get_ted_stats_img(mem, watershed, gt, ted_shift, split_bg, tmp_path):
     sps_path = os.path.join(tmp_path, os.path.splitext(os.path.basename(mem))[0] + '.tif')
     mh.imsave(sps_path, sps.astype(float))
     return get_ted_stats(sps_path, gt, ted_shift, tmp_path, split_bg, num_regions)
-
-
-def get_ted_stats(sp_path, gt, ted_shift, outp, split_bg, num_regions):
-    """ Compute extended stats from ted """
-    # Compute merge tree image using input threshold and save image
-    stats = call_ted(sp_path, gt, ted_shift, files=outp, split_background=split_bg)
-
-    # STATS - Add some information to stats
-    stats['NUM'] = num_regions
-    stats['TED SHIFT'] = ted_shift
-    return stats
 
 
 def get_background_splits(path):

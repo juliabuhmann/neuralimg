@@ -11,10 +11,14 @@ import os
 
 superpixels = 'data/crag/sps'
 truth = 'data/crag/gt'
-hist = os.path.join(superpixels, 'histories_gala')
-thresh = -1
+hist = os.path.join(superpixels, 'histories_mc')
+thresh = 0.070
 ted_shift = 25
-split_bg = False
-outp = 'tmpA/'
+split_bg = False    # Always set to False for CREMI
+workers = 8 # Parallel jobs
+ted_w = 3
+outp = 'hola.txt'
 
-seg = ev.evaluate_merge(superpixels, truth, hist, thresh, ted_shift, split_bg, outp, workers=3)
+seg = ev.evaluate_merge_parallel(superpixels, truth, hist, thresh, ted_shift, 
+    nworkers=workers, split_bg=split_bg, ted_workers=ted_w, outp=outp)
+print(seg)
