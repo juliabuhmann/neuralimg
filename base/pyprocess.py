@@ -18,12 +18,13 @@ class Process(object):
 
     def execute(self, verbose=False):
         """ Executes the command and stores it in the corresponding steam.
-        If """
+        Returns 1 when finished or the content of the command response if
+        requested at creation """
 
         if verbose is True:
             print("Running: " + ' '.join(self.cmd))
 
-        if self.log_file is None and self.out_str is False:
+        if self.log_file is None and self.out_str == False:
             check_call(self.cmd)
         else:
             # Call, wait for end and store results in log
@@ -33,28 +34,28 @@ class Process(object):
             if self.log_file is not None:
                 self._store_output()
             if self.out_str is True:
-                return self._gather_string()
+                return self._gather_string(verbose)
 
         return 1
 
-    def _gather_string(self):
-        """ Stores output in the log file """
-        return _serialize_out(self.proc.stdout) + _serialize_out(self.proc.stderr)
+    def _gather_string(self, verbose=False):
+        """ Returns output as string """
+        return _serialize_out(self.proc.stdout, verbose) + _serialize_out(self.proc.stderr, verbose)
 
-    def _store_output(self):
+    def _store_output(self, verbose=False):
         """ Stores output in the log file """
         with open(self.log_file, 'w') as w:
             while self.proc.poll() is None:
-                _gather_out(w, self.proc.stdout)
-                _gather_out(w, self.proc.stderr)
+                _gather_out(w, self.proc.stdout, verbose)
+                _gather_out(w, self.proc.stderr, verbose)
 
 
-def _serialize_out(pipe, verbose=True):
+def _serialize_out(pipe, verbose=False):
     """ Returns the output of the channel as a string """
     line = pipe.readline()
     res = ''
     while line:
-        if verbose is True:
+        if verbose == True:
             print(line.strip())
         res = res + str(line)
         line = pipe.readline()
@@ -65,7 +66,7 @@ def _gather_out(f, pipe, verbose=True):
     """ Writes the output of the channel into the file """
     line = pipe.readline()
     while line:
-        if verbose is True:
+        if verbose == True:
             print(line.strip())
         f.write(str(line))
         line = pipe.readline()
