@@ -6,6 +6,7 @@ import re
 import numpy as np
 import tempfile
 import shutil
+import logging
 
 from neuralimg import dataio
 
@@ -20,6 +21,8 @@ from neuralimg.base import pyprocess as ps
 
 from neuralimg.image import segment as seg
 from neuralimg.image import preproc as pr
+
+logging.basicConfig(filename='evaluation.log',level=logging.DEBUG)
 
 
 def call_ted(segmented, truth, shift, files=None, split_background=False, threads=5):
@@ -54,7 +57,7 @@ def call_ted(segmented, truth, shift, files=None, split_background=False, thread
         ted_args.append("--tedErrorFiles=" + files)
 
     proc = ps.Process(ted_args, out_str=True)
-    output = proc.execute()
+    output = proc.execute(verbose=False)
 
     # TED FP and TED FN have been erased because --haveBackground option has 
     # been disabled
@@ -116,7 +119,15 @@ def optimal_segmentation(masks, sigmas, membranes, truth, ted_shift, split_bg=Fa
 
         #  Append average for the current configuration
         stats = parallel(jobs)
-    print('All stats: }'.format(stats))
+
+    # Show stats
+    for i in stats:
+        best, all_s, sigma, mask = i
+        logging.debug('Showing sigma %f and mask %d' % (sigma, mask))
+        logging.debug('Best: {}'.format(best))
+        logging.debug('All: {}'.format(all_s))
+        logging.debug('-----------------------------------------------\n\n')
+    # Return best
     score = [i[0]['merges'] for i in stats] # Select the ones with less merges
     return stats[score.index(min(score))]
 
@@ -144,7 +155,7 @@ def get_threshold(mask, sigma, mems, truth, ted_shift, split_bg=False, mweight=1
     Return:
         best setting, all settings, sigma and mask
     """
-    print('Evaluating sigma %f and mask %d' % (sigma, mask))
+    logging.info('Evaluating sigma %f and mask %d' % (sigma, mask))
 
     # Prepare temporary folder
     if tmp_path is not None:
@@ -211,11 +222,9 @@ def search_threshold(superpixels, truth, histories, ted_shift, mweight=10, merge
     cuts = [np.percentile(hist_scores, i) 
         for i in np.linspace(0, 100, merge_values)]
 
-    print('Selected cuts: {}'.format(cuts))
+    logging.debug('Selected cuts: {}'.format(cuts))
     data, best = [], None
     for index, i in enumerate(cuts):
-
-        print('--- Evaluating threshold {}'.format(str(i)))
 
         # Compute weighted score and choose minimum
         stats = evaluate_merge(superpixels, truth, histories, i, ted_shift,
@@ -227,8 +236,6 @@ def search_threshold(superpixels, truth, histories, ted_shift, mweight=10, merge
         current = {'thresh': i, 'weighted': weighted, 'merges': stats['TED FM'], \
             'splits': stats['TED FS']}
         data.append(current)
-
-        print('Obtained: {}'.format(current))
 
         if best is None or best['weighted'] > current['weighted']:
             best = current
@@ -343,7 +350,6 @@ def evaluate_segmentation(sp_img, gt, hist, thresh, ted_shift, split_bg, outp,
         fd, sp_path = tempfile.mkstemp(suffix='.tif')
         mh.imsave(sp_path, merged)
 
-    print('Evaluating image %s as %s' % (sp_img, sp_path))
     num_regions = len(np.unique(merged))
     stats = get_ted_stats(sp_path, gt, ted_shift, outp, split_bg, 
         num_regions, ted_workers=ted_workers)
@@ -368,7 +374,7 @@ def evaluate_supervoxels(sp_folder, gt_folder):
     gt_files = dataio.FileReader(gt_folder).extract_files()
     r, vs, vm = 0.0, 0.0, 0.0
     for (s, g) in zip(sp_files, gt_files):
-        print('Evaluating image %s against %s' % (s, g))
+        logging.debug('Evaluating image %s against %s' % (s, g))
         sp, gt = mh.imread(s), mh.imread(g)
         r += rand.adapted_rand(sp, gt, all_stats=False)
         v = voi.voi(sp, gt)
@@ -393,7 +399,7 @@ def evaluate_crag(sps, gts, raws, mems, hists, create_conf, features_conf,
         :param tmp: Folder to use as temporary folder. Set to None to use OS one
     """
 
-    print('Evaluating CRAG for maxZLink %d ...' % dist)
+    logging.info('Evaluating CRAG for maxZLink %d ...' % dist)
 
     # Auxiliar temp folder for current crag
     if tmp is None:
@@ -522,7 +528,7 @@ def segmentation_grid(membranes, groundtruth, masks, sigmas, ted_shift, split_bg
         for ms in masks:
             for s in sigmas:
 
-                print('Evaluating sigma %f and mask %d' % (s, ms))
+                logging.info('Evaluating sigma %f and mask %d' % (s, ms))
 
                 jobs = []
 
@@ -532,7 +538,6 @@ def segmentation_grid(membranes, groundtruth, masks, sigmas, ted_shift, split_bg
                 ws = seg.Watershed(s, ms)
                 for (i, g) in zip(images, gts):
                     # Save superpixel into tmp folder
-                    print('Iteration for %s and %s' % (i, g))
                     jobs.append(delayed(get_ted_stats_img)(i, ws, g, ted_shift, split_bg, outp))
 
                 # Append average for the current configuration
