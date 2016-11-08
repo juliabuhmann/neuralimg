@@ -38,12 +38,9 @@ class CragGenerator(object):
             os.makedirs(out_p)
         self.output = out_p
 
-        self.logs = os.path.join(out_p, 'log')
-        if not os.path.exists(self.logs):
-            os.mkdir(self.logs)
-
-    def generate_crag(self, groundtruth, superpixels, raws, membranes, config_file, 
-        max_zlink=200, histories=None, histories_thresh=None, overwrite=False, indexes=None):
+    def generate_crag(self, groundtruth, superpixels, raws, membranes, 
+        max_zlink=200, histories=None, histories_thresh=None, max_merges=5,
+        overwrite=False, logs=None, indexes=None, res=[4, 4, 40], threads=3):
         """ Class for generating Candidate Region Adjacency Graphs.
         Params
         ---------
@@ -55,8 +52,6 @@ class CragGenerator(object):
             Path containing raw images
         membranes: string
             Path containing neuron boundaries
-        config_file: string
-            Configuration file path for the CRAG creation
         max_zlink: integer
             Maximum Hausdorff distance for crag candidates according to image 
             resolution (in config file) 
@@ -67,15 +62,20 @@ class CragGenerator(object):
         histories_thresh: float
             Value to use to cut the merge histories. Only values above the given threshold
             will be kept. To disable this option, set to None
+        max_merges: bool
+            Maximum depth in the trees
         overwrite: boolean
             Whether to overwrite a past project
+        logs: string
+            Path where to store the logs. Set to None to disable
         indexes: list or ndarray
             List containing first and last index to consider from the superpixels folder, considering the list
             of ordered names. To use all, set to None
+        res: List
+            Resolutions of X, Y and Z
+        threads: int
+            Number of threads to use
         """
-        if not os.path.isfile(config_file):
-            raise ValueError('A config file must be provided')
-
         self.gt = groundtruth
         self.sps = superpixels
         self.raws = raws
@@ -84,7 +84,12 @@ class CragGenerator(object):
         self.hist_thresh = histories_thresh
         self._check_paths()
 
-        self._generate_project(config_file, max_zlink, overwrite, indexes)
+        if len(res) != 3:
+            raise ValueError('Resolutions parameter must be a list' +
+                ' of 3 numerical values')
+
+        self._generate_project(max_zlink, max_merges, overwrite, logs, 
+            indexes, res, threads)
 
     def _check_paths(self):
         """ Checks if all needed paths exist """
@@ -105,7 +110,7 @@ class CragGenerator(object):
 
         self.project_file = crag
 
-    def _generate_project(self, config_file, zlink, overwrite, inds):
+    def _generate_project(self, zlink, max_merges, overwrite, logs, inds, res, threads):
         """ Generates the HDF of the project """
         # If histories were not provided, use them
         if self.histories is None:
@@ -131,10 +136,7 @@ class CragGenerator(object):
             self.membranes = _restrict_set(self.membranes, inds)
 
         # Prepare file
-        self.hdf = os.path.join(self.output, 'hdf')
-        if not os.path.exists(self.hdf):
-            os.mkdir(self.hdf)
-        self.project_file = os.path.join(self.hdf, 'training_dataset.h5')
+        self.project_file = os.path.join(self.output, 'training_dataset.h5')
 
         if os.path.exists(self.project_file) and overwrite is False:
             raise IOError('Project file already exists!')
@@ -142,13 +144,25 @@ class CragGenerator(object):
         print('Generating project file %s ...' % self.project_file)
 
         # Create CRAG
-        args = [ "cmc_create_project", "-c", config_file,
-            "--supervoxels=" + self.sps, "--mergeHistory=" + self.histories,
-            "--groundTruth=" + self.gt,  "--intensities=" + self.raws,
-            "--boundaries=" + self.membranes, "-p", self.project_file,
-            "--mergeHistoryWithScores", "--maxZLinkHausdorffDistance=" + str(zlink)
+        args = [ "cmc_create_project",
+            "-p", self.project_file,
+            "--mergeHistoryWithScores=True",
+            "--2dSupervoxels=True",
+            "--cragType=empty",
+            "--resX=" + str(res[0]), 
+            "--resY=" + str(res[1]), 
+            "--resZ=" + str(res[2]),
+            "--supervoxels=" + self.sps,
+            "--mergeHistory=" + self.histories,
+            "--groundTruth=" + self.gt,
+            "--intensities=" + self.raws,
+            "--boundaries=" + self.membranes,
+            "--maxZLinkHausdorffDistance=" + str(zlink),
+            "--maxMerges=" + str(max_merges),
+            "--numThreads=" + str(threads)
         ]
-        p = Process(args, os.path.join(self.logs, 'generate_project.log'))
+        logs = None if logs is None else os.path.join(logs, 'create_project.log')
+        p = Process(args, logs)
         p.execute()
 
         # Clean tmps if path used
@@ -174,30 +188,38 @@ class CragGenerator(object):
         mt.thresh_histories(self.histories, thresh, tmpath)
         self.histories = tmpath
 
-    def extract_features(self, config_file):
-        """ Extracts the features for the CRAG """
-
-        if not os.path.isfile(config_file):
-            raise ValueError('A config file must be provided')
+    def extract_features(self, normalize=True, logs=None, threads=3):
+        """ Extracts the features for the CRAG
+        Params
+        ---------
+        normalize: boolean
+            Whether to use feature normalization
+        logs: string
+            Path where to store the process logs. Set to None to disable
+        threads: int
+            Number of threads to use
+        """
 
         if self.project_file is None:
             raise IOError('No CRAG project has been read/generated')
 
         args = [
-            "cmc_extract_features", "-c", config_file,
+            "cmc_extract_features", 
             "-p", self.project_file,
+            "--noVolumeRays=True",
+            "--noSkeletons=True",
+            "--normalize=" + str(normalize),
+            "--numThreads=" + str(threads)
         ]
 
         p = Process(args, os.path.join(self.logs, "extract_features.log"))
         p.execute()
 
-    def extract_best_effort(self, config_file, loss_type=LossType.ASSIGNMENT,
-        best_effort=None, logs=None, overwrite=False):
+    def extract_best_effort(self, loss_type=LossType.ASSIGNMENT,
+        best_effort=None, overwrite=False, logs=None, threads=3):
         """ Extracts the best effort CRAG from the fed data into the project
         Params
         ----------
-        conf_file: string
-            Path to the configuration file
         loss_type: LossType
             Type of loss to use to compute the best effort from the groundtruth.
             By default uses the assignment loss (recommended)
@@ -205,15 +227,14 @@ class CragGenerator(object):
             Path to the folder where best effort need to be saved. It is
             always stored in the project itself, this is an additional option.
             If set to None, no output is generated.
-        logs: string
-            Folder where to store the logs of the process
         overwrite: boolean
             Whether to overwrite previous best effort output in the given location.
             Only used when best effort option has a valid path
+        logs: string
+            Path where to store the process logs. Set to None to disable
+        threads: int
+            Number of threads to use
         """
-
-        if not os.path.isfile(config_file):
-            raise ValueError('A config file must be provided')
 
         if self.project_file is None:
             raise IOError('No CRAG project has been read/generated')
@@ -223,8 +244,13 @@ class CragGenerator(object):
             raise ValueError('Not valid loss type {}'.format(loss_type))
 
         # Extract best effort using Assignment Solver
-        args = ["cmc_train", "-c", config_file, "-p", self.project_file, "--dryRun",
-                "--assignmentSolver", "--bestEffortLoss=" + loss_type]
+        print('Generating best effort for %s ...' % self.project_file)
+        args = ["cmc_train", 
+                "-p", self.project_file, 
+                "--dryRun",
+                "--assignmentSolver", 
+                "--bestEffortLoss=" + loss_type,
+                "--numThreads=" + str(threads)]
 
         # Append best-effort if requested
         if best_effort is not None:
@@ -233,15 +259,16 @@ class CragGenerator(object):
             else:
                 if overwrite is False:
                     raise IOError('Best effort folder already exists')
+            print('Will extract best effort into %s' % best_effort)
             args.append("--exportBestEffort=" + best_effort)
 
-        logs_path = None if logs is None else os.path.join(logs, 'extract_best.log')
-        p = Process(args, logs_path)
+        logs = None if logs is None else os.path.join(logs, 'extract_best.log')
+        p = Process(args, logs)
         p.execute()
 
         self.best_effort = best_effort
 
-    def solve(self, node_bias, edge_bias, outp, iterations):
+    def solve(self, node_bias, edge_bias, outp, iterations, logs=None, threads=3):
         """ Solves the inference problem given the costs assigned
         Params
         ---------
@@ -251,6 +278,12 @@ class CragGenerator(object):
             Bias to be added to each edge weight
         outp: string
             Folder where to extract the solution found
+        iterations: integer
+            Number of iterations for the solver
+        logs: string
+            Path where to store the process logs. Set to None to disable
+        threads: int
+            Number of threads to use
          """
 
         if not os.path.isdir(outp):
@@ -260,12 +293,18 @@ class CragGenerator(object):
             raise IOError('No CRAG project has been read/generated')
 
         args = [
-            "cmc_solve", "-f", str(node_bias), "-b", str(edge_bias),
-            "-p", self.project_file, "--exportSolution=" + str(outp),
-            "--numIterations=" + str(iterations), "--readOnly"
+            "cmc_solve", 
+            "-f", str(node_bias), 
+            "-b", str(edge_bias),
+            "-p", self.project_file, 
+            "--exportSolution=" + str(outp),
+            "--numIterations=" + str(iterations), 
+            "--readOnly",
+            "--numThreads=" + str(threads)
         ]
 
-        p = Process(args, os.path.join(self.logs, "solve.log"))
+        logs = None if logs is None else os.path.join(logs, 'solve.log')
+        p = Process(args, log)
         p.execute()
 
         self.solution = outp
@@ -412,19 +451,19 @@ def evaluate_costs(crag_path, merges, ends, iterations, starting, ending, tmp=No
     return {'rand': rand_score, 'voi_split': voi_split, 'voi_merge': voi_merge}
 
 
-def generate_solution(crag_path, merges, ends, iterations, folder, model=None, batch_size=128):
-    """ Evaluates the assignation of the given merges and end
-    scores and returns the corresponding stats. If node features need also to be assigned, 
-    a path to the model folder must be provided.
+def generate_solution(crag_path, merges, ends, iterations, folder, logs=None, 
+    nthreads=3, model=None):
+    """ Solves the inference problem of the CRAG after assigning the corresponding features and weights
+    to edges and nodes. If node features need also to be assigned, a path to the model folder must be provided.
         :param crag_path: CRAG file path
         :param merges: Merge score to assign
         :param ends: End weight to assign
         :param iterations: Maximum number of iterations
         :param folder: Folder where to generate solution
+        :param logs: Path where to store the logs. Set to None to disable
+        :param nthreads: Number of threads to use
         :param model: Folder where the trained network is. To avoid setting the node features
             in this step, set this to None
-        :param batch_size: Batch of the size to use for descriptor extraction. If no model
-            provided, this is not used
     Returns
     -------
         cg: Crag class containing the solution
@@ -443,6 +482,6 @@ def generate_solution(crag_path, merges, ends, iterations, folder, model=None, b
     aux_crag = os.path.join(folder, 'project')
     cg = CragGenerator(aux_crag)
     cg.read_crag(crag_path)
-    cg.solve(merges, ends, folder, iterations)
+    cg.solve(merges, ends, folder, iterations, logs=logs, threads=nthreads)
     return cg
 

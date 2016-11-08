@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-from neuralimg.crag import crag as cr
+import os
+from neuralimg.crag.crag import *
 from neuralimg.image import preproc as pr
 from neuralimg.crag.merge_mc import *
 
@@ -19,17 +20,17 @@ if __name__ == '__main__':
     membranes = 'data/crag/mem'
 
     # Crag parameters
-    maxHaus = 800   # Maximum Hausdorff distance
-    create_conf = 'data/crag/config/create_training_project.conf'
-    features_conf = 'data/crag/config/extract_training_features.conf'
-    effort_conf = 'data/crag/config/extract_best-effort.conf'
+    maxHaus = 500   # Maximum Hausdorff distance
+    res = [4, 4, 40]
+    nthreads = 5
+    max_merges = 4
     out_p = 'out/project'
 
     # Intermediate paths
     sps_folder = 'sps'
     hists = 'hists'
     mem_norm = 'mem_norm'
-    best_effort_path = 'best_effort'
+    best_effort_path = os.path.join(out_p, 'best_effort')
 
     # Segment data
     proc = pr.DatasetProc(membranes)
@@ -47,8 +48,12 @@ if __name__ == '__main__':
     MCTreeExtractor(sps_folder, mem_norm).extract(hists)
 
     # Generate crag, extract features and best effort
-    cragen = cr.CragGenerator(out_p)
-    cragen.generate_crag(gt, sps_folder, raws, membranes, create_conf, 
-        max_zlink=maxHaus, histories=hists, histories_thresh=thresh, overwrite=True)
-    cragen.extract_best_effort(effort_conf, best_effort=best_effort_path, overwrite=True)
+    cragen = CragGenerator(out_p)
+
+    cragen.generate_crag(gt, sps_folder, raws, mem_norm, max_zlink=maxHaus, 
+        histories=hists, histories_thresh=thresh, max_merges=max_merges,
+        overwrite=True, logs=out_p, indexes=None, res=res, threads=nthreads)
+
+    cragen.extract_best_effort(loss_type=LossType.ASSIGNMENT,
+        best_effort=best_effort_path, logs=out_p, overwrite=True, threads=nthreads)
 
