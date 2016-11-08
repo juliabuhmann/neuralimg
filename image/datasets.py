@@ -176,13 +176,13 @@ class DatasetGen(object):
 
     def _finalize(self):
         """ Makes all actions needed before finishing """
-        print('Closing output file ...')
         # Store data that is left
         if self.count % BUF_SIZE != 0:
             print('Data still need to be saved. Saving ...')
             read = int(self.count/BUF_SIZE) * BUF_SIZE
             self._dump_buffer(self.count - read)
         # Close output file
+        print('Closing output file ...')
         self.h5_file.close()
 
     def _dump_buffer(self, num):
