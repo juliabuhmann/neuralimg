@@ -56,10 +56,10 @@ to execute it on GPU (which is probably the case), install it using Pip followin
 
 ## Network reconstruction pipeline - Main use cases:
 
-1. CRAG generation and best effort extraction can be performed using [this script](https://github.com/DaniUPC/neuralimg/blob/master/examples/segment_and_crag.py).
-2. To extract datasets from a CRAG solution we can use [this example](https://github.com/DaniUPC/neuralimg/blob/master/examples/create_dataset.py). Then, resulting data can be visualized using [this notebook](https://github.com/DaniUPC/neuralimg/blob/master/notebooks/dataset_visualization.ipynb)
-3. To train a network to extract descriptors from it, we can use [this script](https://github.com/DaniUPC/neuralimg/blob/master/examples/launch_network.py).
-4. Once we have a network trained properly, we can save the descriptors to the crag by using [code here](https://github.com/DaniUPC/neuralimg/blob/master/examples/test_features.py).
+1. CRAG generation and best effort extraction can be performed using [this script](https://github.com/DaniUPC/neuralimg/blob/master/examples/crags_cremi.py) for all samples of CREMI data. Some optimal configurations have been provided but further settings can be explored. Check search grid [logs](https://github.com/DaniUPC/neuralimg/tree/master/examples/cremi_eval_logs) for further measurements for each sample.
+2. To extract datasets from the CREMI CRAGS we must use [this example](https://github.com/DaniUPC/neuralimg/blob/master/examples/cremi_triplets.py). It uses a data configuration file, an example of which can be found [here](https://github.com/DaniUPC/neuralimg/blob/master/image/config/data.conf) and whose fields are explained in [this class](https://github.com/DaniUPC/neuralimg/blob/master/image/datasetconf.py). Then, resulting data can be visualized using [this notebook](https://github.com/DaniUPC/neuralimg/blob/master/notebooks/dataset_visualization.ipynb)
+3. To train a network to extract descriptors from it, we can use [this script](https://github.com/DaniUPC/neuralimg/blob/master/examples/launch_network.py). A training configuration example can be found [here](https://github.com/DaniUPC/neuralimg/blob/master/training/config/network.conf). A detailed explanation of each parameter can be found in [this class](https://github.com/DaniUPC/neuralimg/blob/master/training/siameseconf.py). 
+4. Once we have a network trained properly, we can save the descriptors to the CRAG and perform inference to get a solution by using [code here](https://github.com/DaniUPC/neuralimg/blob/master/examples/generate_solution.py)
 
 ## Other use cases
 
@@ -70,6 +70,5 @@ In order to explore parametrizations for the CRAG creation, we can use the follo
 1. [Evaluation of superpixel segmentations](https://github.com/DaniUPC/neuralimg/blob/master/examples/evaluate_grid.py). Results can be explored in this [notebook](https://github.com/DaniUPC/neuralimg/blob/master/notebooks/grid_analysis.ipynb).
 2. Given some desired parametrization, we can [obtain our superpixels and merge trees](https://github.com/DaniUPC/neuralimg/blob/master/examples/segment_data.py).
 3. Given segmentations, we can evaluate [up to which threshold we must merge adjacent candidates](https://github.com/DaniUPC/neuralimg/blob/master/examples/evaluate_merges.py).
-- In order to create CRAGS, we can use examples [here](https://github.com/DaniUPC/neuralimg/blob/master/examples/crag_gen_examples.py).
 
 
