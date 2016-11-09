@@ -304,7 +304,7 @@ class CragGenerator(object):
         ]
 
         logs = None if logs is None else os.path.join(logs, 'solve.log')
-        p = Process(args, log)
+        p = Process(args, logs)
         p.execute()
 
         self.solution = outp
@@ -451,34 +451,42 @@ def evaluate_costs(crag_path, merges, ends, iterations, starting, ending, tmp=No
     return {'rand': rand_score, 'voi_split': voi_split, 'voi_merge': voi_merge}
 
 
-def generate_solution(crag_path, merges, ends, iterations, folder, logs=None, 
-    nthreads=3, model=None):
+def generate_solution(crag_path, merges, ends, iterations, model, folder, logs=None, 
+    edge_feat_value=1, nthreads=3):
     """ Solves the inference problem of the CRAG after assigning the corresponding features and weights
-    to edges and nodes. If node features need also to be assigned, a path to the model folder must be provided.
+    to edges (No assignment edges) and nodes (Slice and assignment nodes). Slice nodes are assigned the descriptor
+    provided by the model. Given the difference between the descriptors of the slices they connect, assignment nodes
+    are set by the ratio between the distance and the maximum distance considering the other assignment they 'compete'
+    with (outliers are identified as well). The other values assigned here are constant values.
         :param crag_path: CRAG file path
         :param merges: Merge score to assign
         :param ends: End weight to assign
         :param iterations: Maximum number of iterations
+        :param model: Folder where the trained network is
         :param folder: Folder where to generate solution
         :param logs: Path where to store the logs. Set to None to disable
+        :param edge_feat_value: Feature value to assign to the no-assignment edges
         :param nthreads: Number of threads to use
-        :param model: Folder where the trained network is. To avoid setting the node features
-            in this step, set this to None
     Returns
     -------
         cg: Crag class containing the solution
     """
     print('Generating solution for merge score %f and end score %f' % (merges, ends))
 
-    # Save updated costs
+    if not os.path.isdir(model):
+        raise ValueError('Model folder %s does not exist' % model)
+
+    # Modify weights
     costs = cc.CragCostManager(crag_path)
     costs.update_node_weights(merges, weights=None)
     costs.update_edge_weights(ends)
-    if model is not None:
-        costs.update_node_features(model)
+    # Modify features
+    costs.update_node_features(model)
+    costs.update_edge_features(edge_feat_value)
     costs.save()
 
     # Evaluate resulting crag
+    dataio.create_dir(folder)
     aux_crag = os.path.join(folder, 'project')
     cg = CragGenerator(aux_crag)
     cg.read_crag(crag_path)

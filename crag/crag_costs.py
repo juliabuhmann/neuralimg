@@ -76,22 +76,41 @@ class CragCostManager(object):
         """ Returns the feature vector for the given node (node or id) """
         return self.nf.__getitem__(self.crag.nodeFromId(node_id))
 
-    def update_node_weights(self, merge_score, weights=None):
+    def update_node_weights(self, merge_score, feature_size=128, weights=None):
         """ Updates weights for Slice Nodes and Assignment nodes
+        Assignment nodes are assigned a unique weight with value of the merge score
+        and slice nodes are assigned a weight of ones with length equal to the
+        slice node feature size
         :param merge_score: Score ot be assigned to assigment nodes
+        :param feature_size: Size of the slice node feature size.
         :param weights: List of weights to assign to the slice nodes.
             Sould have same size as the descriptors stored in the nodes.
             If set to None, it sets a list of 1s with size corresponding 
             to size of the node features
         """
-        self.fw.__setitem__(CragNodeType.AssignmentNode, [1, merge_score])
-        feature_size = len(self.nf.__getitem__(self.assign_nodes[0]))
-        weights = [1] * feature_size if weights is None else weights
-        # Safe weight assignment
-        if len(weights) != feature_size:
-            raise ValueError('Size of node weights must be equal to feature size.' + 
-                ' Size if %d and provided % d' % (feature_size, len(weights)))
+
+        if feature_size is not None and weights is not None:
+            raise ValueError('Feature size and weight list cannot be not None' +
+                ' at the same time. Input either of them')
+
+        # Update assignment node
+        self.fw.__setitem__(CragNodeType.AssignmentNode, [merge_score])
+
+        real_feature_size = self._get_slice_feature_size()
+        weights = weights if weights is not None else [1] * feature_size
+        if len(weights) != real_feature_size:
+            print('Warning: Assigning a feature weight vector different from the ' +
+                ' size of the feature size of the slice nodes. This will only ' + 
+                ' work if slice node features are modified before saving ')
+        # Update slice node
         self.fw.__setitem__(CragNodeType.SliceNode, weights)
+
+    def _get_slice_feature_size(self):
+        """ Returns the feature size of the first slice node to find """
+        for i in self.crag.nodes():
+            if self.crag.type(i) == CragNodeType.SliceNode:
+                return len(self.nf.__getitem__(i))
+        raise RuntimeError('Could not find a slice node in the crag')
 
     def update_edge_weights(self, end_score):
         """ Updates weights for no assignment edges with the
@@ -128,8 +147,6 @@ class CragCostManager(object):
             # Care only about the slice nodes here
             if self.crag.type(current) != CragNodeType.SliceNode:
                 continue
-            else:
-                print('Found slice node')
 
             # Get info form current node
             current_depth = cu.get_depth(current, self.volumes)
@@ -137,34 +154,33 @@ class CragCostManager(object):
             # Get assignment nodes connected to current node
             ans = cu.get_connected_an(self.crag, current)
 
-            if len(ans) > 0:
-                print('Slice node has assignment nodes assigned')
-                # Node has assignments available
-                nodes = []
-                # Search for assignment nodes connecting to next section
-                for an in ans:
-                    other = cu.get_other_slice(self.crag, current, an)
-                    if cu.get_depth(other, self.volumes) > current_depth:
-                        nodes.append([other, an])
+            # print('Slice node has assignment nodes assigned')
+            # Node has assignments available
+            nodes = []
+            # Search for assignment nodes connecting to next section
+            for an in ans:
+                other = cu.get_other_slice(self.crag, current, an)
+                if cu.get_depth(other, self.volumes) > current_depth:
+                    nodes.append([other, an])
 
-                # Get slice images and compute descriptors
-                slices = [current] + [j[0] for j in nodes]
-                slice_imgs = self._get_images(slices, imh, imw, pad, norm, names, pos)
-                batch = _build_input_from_slices(slice_imgs, names, imh, imw)
-                desc = net.get_descriptors(batch)
+            # Get slice images and compute descriptors
+            slices = [current] + [j[0] for j in nodes]
+            slice_imgs = self._get_images(slices, imh, imw, pad, norm, names, pos)
+            batch = _build_input_from_slices(slice_imgs, names, imh, imw)
+            desc = net.get_descriptors(batch)
 
-                # Assign descriptor for each slice
-                for i in range(len(slices)):
-                    self.nf.__setitem__(slices[i], desc[i, ...].tolist())
+            # Assign descriptor for each slice
+            for i in range(len(slices)):
+                self.nf.__setitem__(slices[i], desc[i, ...].tolist())
 
-                # Assign ratio to the assignment nodes, if exist
-                if len(nodes) > 0:
-                    ratios = _get_ratios(desc[0], desc[1:], OUTLIER_VALUE)
-                    for ((_, an), r) in zip(nodes, ratios):
-                        self.nf.__setitem__(an, [r])
+            # Assign ratio to the assignment nodes, if exist
+            if len(nodes) > 0:
+                ratios = _get_ratios(desc[0], desc[1:], OUTLIER_VALUE)
+                for ((_, an), r) in zip(nodes, ratios):
+                    self.nf.__setitem__(an, [r])
 
-                # Track length of the descriptor
-                length = desc.shape[1]
+            # Track length of the descriptor
+            length = desc.shape[1]
 
         net.finalize_test()
 
@@ -179,12 +195,33 @@ class CragCostManager(object):
 
     def save(self):
         """ Updates the modified features/weights into the original CRAG file """
-        print('Saving node features ---')
+        self._validate()
+        print('Crag validated: OK. Saving node features ---')
         self.store.saveNodeFeatures(self.crag, self.nf)
         print('Saving edge features ...')
         self.store.saveEdgeFeatures(self.crag, self.ef)
         print('Saving feature weights ...')
         self.store.saveFeatureWeights(self.fw)
+
+    def _item_length(self, manager, inp):
+        """ Returns the length of the element given by the manager (edge/feature/weight)
+        and the given key """
+        return len(manager.__getitem__(inp))
+
+    def _validate(self):
+        """ Validates that all node/edge feature and weights are consistent """
+
+        def _validate_set(elem_set, set_manager, elem_name):
+            for i in elem_set:
+                feat_len = self._item_length(set_manager, i)
+                weight_len = self._item_length(self.fw, self.crag.type(i))
+                if feat_len != weight_len:
+                    raise RuntimeError('Incompatible feature(' + str(feat_len) + ') and weight(' + 
+                        str(weight_len) + ') for ' + elem_name + ' ' + str(self.crag.id(i)) +
+                        ' of type ' + str(self.crag.type(i)))
+
+        _validate_set(self.crag.nodes(), self.nf, 'node')
+        _validate_set(self.crag.edges(), self.ef, 'edge')
 
     def _get_images(self, node_slices, imh, imw, padding, norm, labels, positions):
         """ Obtains the padded images corresponding to the input slice nodes """
@@ -212,10 +249,10 @@ def _get_ratios(ref_desc, other_desc, outlier_ratio):
     the score for each corresponding assignment node """
     # Update assignment feature as L2 norm
     l2_dists = [np.sqrt(sum(np.power(ref_desc - d, 2))) for d in other_desc]
-    print('L2 dists: {}'.format(l2_dists))
+    # print('L2 dists: {}'.format(l2_dists))
     # Compute edge for outliers
     out_edge = ml.compute_outlier_edge(l2_dists)
-    print('Outlier edge: {}'.format(out_edge))
+    # print('Outlier edge: {}'.format(out_edge))
     # Compute maximum from non outliers
     maxim = max([d for d in l2_dists if d <= out_edge])
     # Set outliers with maximum distance
@@ -226,6 +263,6 @@ def _get_ratios(ref_desc, other_desc, outlier_ratio):
             ratios[i] = outlier_ratio
         else:
             ratios[i] = float(l2_dists[i]/maxim)
-    print('Ratios: {}'.format(ratios))
+    # print('Ratios: {}'.format(ratios))
     return ratios 
 
