@@ -22,7 +22,7 @@ from neuralimg.base import pyprocess as ps
 from neuralimg.image import segment as seg
 from neuralimg.image import preproc as pr
 
-logging.basicConfig(filename='evaluation.log',level=logging.DEBUG)
+logging.basicConfig(filename='evaluationB.log',level=logging.DEBUG)
 
 
 def call_ted(segmented, truth, shift, files=None, split_background=False, threads=5):
