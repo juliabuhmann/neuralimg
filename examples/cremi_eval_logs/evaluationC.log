@@ -1,0 +1,172 @@
+INFO:root:Evaluating sigma 0.250000 and mask 3
+INFO:root:Evaluating sigma 0.500000 and mask 3
+INFO:root:Evaluating sigma 1.000000 and mask 3
+INFO:root:Evaluating sigma 0.250000 and mask 5
+INFO:root:Evaluating sigma 0.250000 and mask 3
+INFO:root:Evaluating sigma 0.500000 and mask 3
+INFO:root:Evaluating sigma 1.000000 and mask 3
+INFO:root:Evaluating sigma 0.250000 and mask 5
+DEBUG:root:Selected cuts: [7.0, 14.0, 15.0, 17.0, 20.5, 26.0, 34.0, 44.0, 70.5, 88.0, 117.5, 240.0]
+DEBUG:root:Selected cuts: [6.0, 13.5, 14.0, 15.0, 17.0, 20.0, 25.0, 31.0, 39.5, 59.5, 94.5, 240.0]
+DEBUG:root:Selected cuts: [6.0, 13.5, 14.0, 15.0, 17.0, 20.0, 25.0, 31.0, 39.5, 59.5, 94.5, 241.0]
+DEBUG:root:Selected cuts: [6.0, 13.5, 14.0, 15.0, 17.0, 20.5, 25.0, 31.0, 40.0, 60.0, 94.5, 240.5]
+INFO:root:Evaluating sigma 0.500000 and mask 5
+DEBUG:root:Selected cuts: [7.0, 14.0, 15.0, 17.0, 20.5, 26.0, 34.0, 44.0, 70.5, 88.0, 117.5, 241.0]
+INFO:root:Evaluating sigma 1.000000 and mask 5
+INFO:root:Evaluating sigma 0.250000 and mask 7
+DEBUG:root:Selected cuts: [6.0, 14.0, 15.0, 17.0, 20.5, 26.0, 34.0, 44.5, 70.5, 88.0, 117.5, 240.5]
+DEBUG:root:Selected cuts: [7.0, 14.0, 15.0, 18.5, 24.0, 31.5, 42.0, 62.0, 81.5, 94.0, 127.0, 241.0]
+INFO:root:Evaluating sigma 0.500000 and mask 7
+DEBUG:root:Selected cuts: [7.0, 14.0, 15.0, 18.5, 24.0, 31.5, 42.0, 62.5, 81.5, 94.0, 127.0, 241.0]
+INFO:root:Evaluating sigma 1.000000 and mask 7
+DEBUG:root:Selected cuts: [6.0, 14.0, 15.0, 18.5, 24.0, 31.5, 42.0, 62.5, 81.5, 94.0, 126.5, 240.5]
+INFO:root:Evaluating sigma 0.250000 and mask 9
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.0, 20.0, 26.0, 35.5, 47.5, 72.0, 84.5, 97.0, 130.5, 240.0]
+INFO:root:Evaluating sigma 0.500000 and mask 9
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.0, 20.0, 26.0, 35.5, 47.5, 72.0, 84.5, 97.0, 130.5, 241.0]
+INFO:root:Evaluating sigma 1.000000 and mask 9
+DEBUG:root:Selected cuts: [6.0, 14.0, 16.0, 20.0, 26.0, 36.0, 47.5, 72.0, 84.5, 96.5, 130.5, 240.5]
+INFO:root:Evaluating sigma 0.250000 and mask 11
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.0, 21.0, 28.5, 39.5, 56.0, 77.0, 87.0, 99.5, 134.0, 241.0]
+INFO:root:Evaluating sigma 0.500000 and mask 11
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.0, 21.0, 28.5, 39.5, 56.0, 77.0, 87.0, 99.5, 134.0, 241.0]
+INFO:root:Evaluating sigma 1.000000 and mask 11
+INFO:root:Evaluating sigma 0.250000 and mask 13
+DEBUG:root:Selected cuts: [9.0, 14.0, 16.0, 21.0, 29.0, 39.5, 56.5, 77.0, 87.0, 99.0, 133.5, 240.5]
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.5, 22.0, 30.0, 41.272727272727934, 61.0, 78.5, 88.0, 100.5, 135.0, 240.0]
+INFO:root:Evaluating sigma 0.500000 and mask 13
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.5, 22.0, 30.0, 41.5, 61.0, 79.0, 88.0, 100.5, 135.0, 241.0]
+INFO:root:Evaluating sigma 1.000000 and mask 13
+DEBUG:root:Selected cuts: [9.0, 14.0, 16.5, 22.0, 30.0, 41.5, 61.0, 78.5, 87.5, 100.0, 134.5, 240.5]
+INFO:root:Evaluating sigma 0.250000 and mask 15
+INFO:root:Evaluating sigma 0.500000 and mask 15
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.5, 22.0, 30.5, 42.5, 63.5, 79.5, 88.5, 101.0, 135.5, 240.0]
+DEBUG:root:Selected cuts: [7.0, 14.0, 16.5, 22.0, 30.5, 42.5, 63.5, 79.5, 88.5, 101.0, 135.5, 241.0]
+INFO:root:Evaluating sigma 1.000000 and mask 15
+DEBUG:root:Selected cuts: [9.0, 14.0, 16.5, 22.0, 31.0, 43.0, 63.5, 79.5, 88.5, 101.0, 135.5, 240.5]
+DEBUG:root:Showing sigma 0.250000 and mask 3
+DEBUG:root:Best: {'merges': 19.672, 'weighted': 133.91200000000001, 'thresh': 39.5, 'splits': 330.632}
+DEBUG:root:All: [{'merges': 6.768, 'weighted': 1893.7359999999999, 'thresh': 6.0, 'splits': 1961.416}, {'merges': 7.032, 'weighted': 1661.96, 'thresh': 13.5, 'splits': 1732.28}, {'merges': 7.728, 'weighted': 1400.1120000000001, 'thresh': 14.0, 'splits': 1477.392}, {'merges': 8.48, 'weighted': 1222.24, 'thresh': 15.0, 'splits': 1307.04}, {'merges': 9.408, 'weighted': 1022.5600000000001, 'thresh': 17.0, 'splits': 1116.64}, {'merges': 10.456, 'weighted': 832.72800000000007, 'thresh': 20.0, 'splits': 937.288}, {'merges': 12.472, 'weighted': 588.51199999999994, 'thresh': 25.0, 'splits': 713.232}, {'merges': 15.056, 'weighted': 372.62399999999997, 'thresh': 31.0, 'splits': 523.184}, {'merges': 19.672, 'weighted': 133.91200000000001, 'thresh': 39.5, 'splits': 330.632}, {'merges': 38.968, 'weighted': 245.50400000000008, 'thresh': 59.5, 'splits': 144.176}, {'merges': 182.376, 'weighted': 1741.4159999999999, 'thresh': 94.5, 'splits': 82.344}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.500000 and mask 3
+DEBUG:root:Best: {'merges': 19.656, 'weighted': 134.62400000000002, 'thresh': 39.5, 'splits': 331.184}
+DEBUG:root:All: [{'merges': 6.952, 'weighted': 1892.0799999999999, 'thresh': 6.0, 'splits': 1961.6}, {'merges': 7.24, 'weighted': 1659.5039999999999, 'thresh': 13.5, 'splits': 1731.904}, {'merges': 7.84, 'weighted': 1398.0079999999998, 'thresh': 14.0, 'splits': 1476.408}, {'merges': 8.56, 'weighted': 1219.9840000000002, 'thresh': 15.0, 'splits': 1305.584}, {'merges': 9.424, 'weighted': 1020.904, 'thresh': 17.0, 'splits': 1115.144}, {'merges': 10.496, 'weighted': 831.54399999999998, 'thresh': 20.0, 'splits': 936.504}, {'merges': 12.528, 'weighted': 587.952, 'thresh': 25.0, 'splits': 713.232}, {'merges': 15.096, 'weighted': 372.98399999999992, 'thresh': 31.0, 'splits': 523.944}, {'merges': 19.656, 'weighted': 134.62400000000002, 'thresh': 39.5, 'splits': 331.184}, {'merges': 38.984, 'weighted': 245.02400000000003, 'thresh': 59.5, 'splits': 144.816}, {'merges': 182.368, 'weighted': 1741.2479999999998, 'thresh': 94.5, 'splits': 82.432}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 1.000000 and mask 3
+DEBUG:root:Best: {'merges': 20.112, 'weighted': 123.53600000000003, 'thresh': 40.0, 'splits': 324.656}
+DEBUG:root:All: [{'merges': 7.232, 'weighted': 1889.5520000000001, 'thresh': 6.0, 'splits': 1961.872}, {'merges': 7.504, 'weighted': 1654.0720000000001, 'thresh': 13.5, 'splits': 1729.112}, {'merges': 8.0, 'weighted': 1400.5440000000001, 'thresh': 14.0, 'splits': 1480.544}, {'merges': 8.672, 'weighted': 1224.384, 'thresh': 15.0, 'splits': 1311.104}, {'merges': 9.512, 'weighted': 1027.2640000000001, 'thresh': 17.0, 'splits': 1122.384}, {'merges': 10.648, 'weighted': 822.35199999999998, 'thresh': 20.5, 'splits': 928.832}, {'merges': 12.432, 'weighted': 597.75999999999999, 'thresh': 25.0, 'splits': 722.08}, {'merges': 14.92, 'weighted': 382.40000000000003, 'thresh': 31.0, 'splits': 531.6}, {'merges': 20.112, 'weighted': 123.53600000000003, 'thresh': 40.0, 'splits': 324.656}, {'merges': 40.056, 'weighted': 255.31999999999994, 'thresh': 60.0, 'splits': 145.24}, {'merges': 183.664, 'weighted': 1754.3199999999999, 'thresh': 94.5, 'splits': 82.32}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.5, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.250000 and mask 5
+DEBUG:root:Best: {'merges': 18.184, 'weighted': 71.032000000000011, 'thresh': 34.0, 'splits': 252.872}
+DEBUG:root:All: [{'merges': 9.936, 'weighted': 804.84799999999996, 'thresh': 7.0, 'splits': 904.208}, {'merges': 10.84, 'weighted': 608.18399999999997, 'thresh': 14.0, 'splits': 716.584}, {'merges': 11.56, 'weighted': 525.19999999999993, 'thresh': 15.0, 'splits': 640.8}, {'merges': 12.304, 'weighted': 431.98399999999998, 'thresh': 17.0, 'splits': 555.024}, {'merges': 13.248, 'weighted': 335.86400000000003, 'thresh': 20.5, 'splits': 468.344}, {'merges': 15.112, 'weighted': 207.00799999999998, 'thresh': 26.0, 'splits': 358.128}, {'merges': 18.184, 'weighted': 71.032000000000011, 'thresh': 34.0, 'splits': 252.872}, {'merges': 24.168, 'weighted': 87.575999999999993, 'thresh': 44.0, 'splits': 154.104}, {'merges': 59.08, 'weighted': 509.61599999999999, 'thresh': 70.5, 'splits': 81.184}, {'merges': 147.496, 'weighted': 1414.672, 'thresh': 88.0, 'splits': 60.288}, {'merges': 237.64, 'weighted': 2334.7919999999995, 'thresh': 117.5, 'splits': 41.608}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.500000 and mask 5
+DEBUG:root:Best: {'merges': 18.24, 'weighted': 70.448000000000036, 'thresh': 34.0, 'splits': 252.848}
+DEBUG:root:All: [{'merges': 10.072, 'weighted': 803.62400000000002, 'thresh': 7.0, 'splits': 904.344}, {'merges': 10.968, 'weighted': 605.952, 'thresh': 14.0, 'splits': 715.632}, {'merges': 11.616, 'weighted': 523.27200000000005, 'thresh': 15.0, 'splits': 639.432}, {'merges': 12.32, 'weighted': 430.70400000000001, 'thresh': 17.0, 'splits': 553.904}, {'merges': 13.264, 'weighted': 334.98400000000004, 'thresh': 20.5, 'splits': 467.624}, {'merges': 15.112, 'weighted': 206.80000000000001, 'thresh': 26.0, 'splits': 357.92}, {'merges': 18.24, 'weighted': 70.448000000000036, 'thresh': 34.0, 'splits': 252.848}, {'merges': 24.176, 'weighted': 87.063999999999993, 'thresh': 44.0, 'splits': 154.696}, {'merges': 59.28, 'weighted': 511.18399999999997, 'thresh': 70.5, 'splits': 81.616}, {'merges': 147.768, 'weighted': 1417.4400000000001, 'thresh': 88.0, 'splits': 60.24}, {'merges': 237.608, 'weighted': 2334.3600000000001, 'thresh': 117.5, 'splits': 41.72}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 1.000000 and mask 5
+DEBUG:root:Best: {'merges': 18.232, 'weighted': 74.432000000000016, 'thresh': 34.0, 'splits': 256.752}
+DEBUG:root:All: [{'merges': 10.248, 'weighted': 802.03999999999996, 'thresh': 6.0, 'splits': 904.52}, {'merges': 10.944, 'weighted': 607.48799999999994, 'thresh': 14.0, 'splits': 716.928}, {'merges': 11.6, 'weighted': 525.69600000000003, 'thresh': 15.0, 'splits': 641.696}, {'merges': 12.28, 'weighted': 434.36799999999999, 'thresh': 17.0, 'splits': 557.168}, {'merges': 13.168, 'weighted': 339.69599999999997, 'thresh': 20.5, 'splits': 471.376}, {'merges': 15.096, 'weighted': 210.71200000000002, 'thresh': 26.0, 'splits': 361.672}, {'merges': 18.232, 'weighted': 74.432000000000016, 'thresh': 34.0, 'splits': 256.752}, {'merges': 24.616, 'weighted': 91.536000000000001, 'thresh': 44.5, 'splits': 154.624}, {'merges': 60.08, 'weighted': 518.67199999999991, 'thresh': 70.5, 'splits': 82.128}, {'merges': 149.312, 'weighted': 1432.5680000000002, 'thresh': 88.0, 'splits': 60.552}, {'merges': 238.128, 'weighted': 2339.5999999999999, 'thresh': 117.5, 'splits': 41.68}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.5, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.250000 and mask 7
+DEBUG:root:Best: {'merges': 18.248, 'weighted': 37.999999999999972, 'thresh': 31.5, 'splits': 220.48}
+DEBUG:root:All: [{'merges': 11.712, 'weighted': 524.82399999999996, 'thresh': 7.0, 'splits': 641.944}, {'merges': 12.472, 'weighted': 397.37599999999998, 'thresh': 14.0, 'splits': 522.096}, {'merges': 13.088, 'weighted': 339.07999999999998, 'thresh': 15.0, 'splits': 469.96}, {'merges': 14.184, 'weighted': 243.54400000000001, 'thresh': 18.5, 'splits': 385.384}, {'merges': 15.672, 'weighted': 141.52000000000001, 'thresh': 24.0, 'splits': 298.24}, {'merges': 18.248, 'weighted': 37.999999999999972, 'thresh': 31.5, 'splits': 220.48}, {'merges': 23.592, 'weighted': 96.335999999999984, 'thresh': 42.0, 'splits': 139.584}, {'merges': 43.704, 'weighted': 358.01600000000002, 'thresh': 62.0, 'splits': 79.024}, {'merges': 105.912, 'weighted': 1004.2880000000001, 'thresh': 81.5, 'splits': 54.832}, {'merges': 180.72, 'weighted': 1762.4080000000001, 'thresh': 94.0, 'splits': 44.792}, {'merges': 249.968, 'weighted': 2469.752, 'thresh': 127.0, 'splits': 29.928}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.500000 and mask 7
+DEBUG:root:Best: {'merges': 18.24, 'weighted': 38.184000000000026, 'thresh': 31.5, 'splits': 220.584}
+DEBUG:root:All: [{'merges': 11.84, 'weighted': 523.67200000000003, 'thresh': 7.0, 'splits': 642.072}, {'merges': 12.568, 'weighted': 395.83999999999997, 'thresh': 14.0, 'splits': 521.52}, {'merges': 13.136, 'weighted': 337.68000000000006, 'thresh': 15.0, 'splits': 469.04}, {'merges': 14.152, 'weighted': 243.42400000000004, 'thresh': 18.5, 'splits': 384.944}, {'merges': 15.704, 'weighted': 140.952, 'thresh': 24.0, 'splits': 297.992}, {'merges': 18.24, 'weighted': 38.184000000000026, 'thresh': 31.5, 'splits': 220.584}, {'merges': 23.608, 'weighted': 96.120000000000005, 'thresh': 42.0, 'splits': 139.96}, {'merges': 44.544, 'weighted': 366.72799999999995, 'thresh': 62.5, 'splits': 78.712}, {'merges': 105.912, 'weighted': 1004.1760000000002, 'thresh': 81.5, 'splits': 54.944}, {'merges': 180.576, 'weighted': 1760.9359999999999, 'thresh': 94.0, 'splits': 44.824}, {'merges': 249.968, 'weighted': 2469.7039999999997, 'thresh': 127.0, 'splits': 29.976}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 1.000000 and mask 7
+DEBUG:root:Best: {'merges': 18.176, 'weighted': 41.439999999999998, 'thresh': 31.5, 'splits': 223.2}
+DEBUG:root:All: [{'merges': 12.048, 'weighted': 521.79999999999995, 'thresh': 6.0, 'splits': 642.28}, {'merges': 12.64, 'weighted': 395.904, 'thresh': 14.0, 'splits': 522.304}, {'merges': 13.16, 'weighted': 339.32000000000005, 'thresh': 15.0, 'splits': 470.92}, {'merges': 14.112, 'weighted': 246.24000000000001, 'thresh': 18.5, 'splits': 387.36}, {'merges': 15.64, 'weighted': 144.47999999999999, 'thresh': 24.0, 'splits': 300.88}, {'merges': 18.176, 'weighted': 41.439999999999998, 'thresh': 31.5, 'splits': 223.2}, {'merges': 23.6, 'weighted': 93.719999999999999, 'thresh': 42.0, 'splits': 142.28}, {'merges': 44.832, 'weighted': 368.68799999999999, 'thresh': 62.5, 'splits': 79.632}, {'merges': 107.592, 'weighted': 1020.7760000000001, 'thresh': 81.5, 'splits': 55.144}, {'merges': 181.832, 'weighted': 1773.3440000000001, 'thresh': 94.0, 'splits': 44.976}, {'merges': 249.832, 'weighted': 2468.2159999999999, 'thresh': 126.5, 'splits': 30.104}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.5, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.250000 and mask 9
+DEBUG:root:Best: {'merges': 21.016, 'weighted': 49.591999999999956, 'thresh': 35.5, 'splits': 160.568}
+DEBUG:root:All: [{'merges': 13.128, 'weighted': 395.82400000000007, 'thresh': 7.0, 'splits': 527.104}, {'merges': 13.896, 'weighted': 295.24000000000001, 'thresh': 14.0, 'splits': 434.2}, {'merges': 14.896, 'weighted': 212.87999999999997, 'thresh': 16.0, 'splits': 361.84}, {'merges': 15.8, 'weighted': 140.12, 'thresh': 20.0, 'splits': 298.12}, {'merges': 17.496, 'weighted': 56.27200000000002, 'thresh': 26.0, 'splits': 231.232}, {'merges': 21.016, 'weighted': 49.591999999999956, 'thresh': 35.5, 'splits': 160.568}, {'merges': 28.52, 'weighted': 190.89599999999999, 'thresh': 47.5, 'splits': 94.304}, {'merges': 64.128, 'weighted': 585.49599999999998, 'thresh': 72.0, 'splits': 55.784}, {'merges': 125.768, 'weighted': 1213.7440000000001, 'thresh': 84.5, 'splits': 43.936}, {'merges': 193.152, 'weighted': 1895.752, 'thresh': 97.0, 'splits': 35.768}, {'merges': 254.192, 'weighted': 2518.0160000000001, 'thresh': 130.5, 'splits': 23.904}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.500000 and mask 9
+DEBUG:root:Best: {'merges': 20.96, 'weighted': 49.032000000000011, 'thresh': 35.5, 'splits': 160.568}
+DEBUG:root:All: [{'merges': 13.232, 'weighted': 394.88799999999998, 'thresh': 7.0, 'splits': 527.208}, {'merges': 13.968, 'weighted': 294.29599999999999, 'thresh': 14.0, 'splits': 433.976}, {'merges': 14.872, 'weighted': 212.52799999999999, 'thresh': 16.0, 'splits': 361.248}, {'merges': 15.816, 'weighted': 139.44000000000003, 'thresh': 20.0, 'splits': 297.6}, {'merges': 17.48, 'weighted': 56.183999999999997, 'thresh': 26.0, 'splits': 230.984}, {'merges': 20.96, 'weighted': 49.032000000000011, 'thresh': 35.5, 'splits': 160.568}, {'merges': 28.528, 'weighted': 190.74399999999997, 'thresh': 47.5, 'splits': 94.536}, {'merges': 64.16, 'weighted': 585.59999999999991, 'thresh': 72.0, 'splits': 56.0}, {'merges': 125.856, 'weighted': 1214.424, 'thresh': 84.5, 'splits': 44.136}, {'merges': 193.024, 'weighted': 1894.3920000000001, 'thresh': 97.0, 'splits': 35.848}, {'merges': 254.152, 'weighted': 2517.5679999999998, 'thresh': 130.5, 'splits': 23.952}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 1.000000 and mask 9
+DEBUG:root:Best: {'merges': 21.184, 'weighted': 52.712000000000018, 'thresh': 36.0, 'splits': 159.128}
+DEBUG:root:All: [{'merges': 13.384, 'weighted': 393.51999999999998, 'thresh': 6.0, 'splits': 527.36}, {'merges': 13.984, 'weighted': 294.62400000000002, 'thresh': 14.0, 'splits': 434.464}, {'merges': 14.864, 'weighted': 214.61599999999996, 'thresh': 16.0, 'splits': 363.256}, {'merges': 15.664, 'weighted': 143.35200000000003, 'thresh': 20.0, 'splits': 299.992}, {'merges': 17.432, 'weighted': 59.343999999999994, 'thresh': 26.0, 'splits': 233.664}, {'merges': 21.184, 'weighted': 52.712000000000018, 'thresh': 36.0, 'splits': 159.128}, {'merges': 28.656, 'weighted': 190.512, 'thresh': 47.5, 'splits': 96.048}, {'merges': 65.072, 'weighted': 594.39200000000005, 'thresh': 72.0, 'splits': 56.328}, {'merges': 126.992, 'weighted': 1225.6000000000001, 'thresh': 84.5, 'splits': 44.32}, {'merges': 192.224, 'weighted': 1886.0319999999997, 'thresh': 96.5, 'splits': 36.208}, {'merges': 254.416, 'weighted': 2520.3519999999999, 'thresh': 130.5, 'splits': 23.808}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.5, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.250000 and mask 11
+DEBUG:root:Best: {'merges': 19.4, 'weighted': 10.240000000000009, 'thresh': 28.5, 'splits': 183.76}
+DEBUG:root:All: [{'merges': 14.504, 'weighted': 304.98400000000004, 'thresh': 7.0, 'splits': 450.024}, {'merges': 15.232, 'weighted': 222.91200000000003, 'thresh': 14.0, 'splits': 375.232}, {'merges': 16.184, 'weighted': 150.648, 'thresh': 16.0, 'splits': 312.488}, {'merges': 17.296, 'weighted': 74.984000000000009, 'thresh': 21.0, 'splits': 247.944}, {'merges': 19.4, 'weighted': 10.240000000000009, 'thresh': 28.5, 'splits': 183.76}, {'merges': 24.024, 'weighted': 119.376, 'thresh': 39.5, 'splits': 120.864}, {'merges': 37.536, 'weighted': 306.608, 'thresh': 56.0, 'splits': 68.752}, {'merges': 82.48, 'weighted': 779.40000000000009, 'thresh': 77.0, 'splits': 45.4}, {'merges': 142.368, 'weighted': 1386.1759999999999, 'thresh': 87.0, 'splits': 37.504}, {'merges': 202.128, 'weighted': 1990.5039999999997, 'thresh': 99.5, 'splits': 30.776}, {'merges': 257.888, 'weighted': 2558.5359999999996, 'thresh': 134.0, 'splits': 20.344}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.500000 and mask 11
+DEBUG:root:Best: {'merges': 19.384, 'weighted': 10.176000000000016, 'thresh': 28.5, 'splits': 183.664}
+DEBUG:root:All: [{'merges': 14.608, 'weighted': 304.048, 'thresh': 7.0, 'splits': 450.128}, {'merges': 15.296, 'weighted': 222.14400000000001, 'thresh': 14.0, 'splits': 375.104}, {'merges': 16.2, 'weighted': 150.06400000000002, 'thresh': 16.0, 'splits': 312.064}, {'merges': 17.288, 'weighted': 74.584000000000003, 'thresh': 21.0, 'splits': 247.464}, {'merges': 19.384, 'weighted': 10.176000000000016, 'thresh': 28.5, 'splits': 183.664}, {'merges': 23.992, 'weighted': 118.91200000000002, 'thresh': 39.5, 'splits': 121.008}, {'merges': 37.6, 'weighted': 306.95999999999998, 'thresh': 56.0, 'splits': 69.04}, {'merges': 82.664, 'weighted': 781.05600000000004, 'thresh': 77.0, 'splits': 45.584}, {'merges': 142.496, 'weighted': 1387.3199999999999, 'thresh': 87.0, 'splits': 37.64}, {'merges': 202.056, 'weighted': 1989.7200000000003, 'thresh': 99.5, 'splits': 30.84}, {'merges': 257.824, 'weighted': 2557.864, 'thresh': 134.0, 'splits': 20.376}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 1.000000 and mask 11
+DEBUG:root:Best: {'merges': 19.52, 'weighted': 13.383999999999986, 'thresh': 29.0, 'splits': 181.816}
+DEBUG:root:All: [{'merges': 14.792, 'weighted': 302.38400000000001, 'thresh': 9.0, 'splits': 450.304}, {'merges': 15.328, 'weighted': 222.16799999999998, 'thresh': 14.0, 'splits': 375.448}, {'merges': 16.176, 'weighted': 152.17599999999999, 'thresh': 16.0, 'splits': 313.936}, {'merges': 17.16, 'weighted': 78.27200000000002, 'thresh': 21.0, 'splits': 249.872}, {'merges': 19.52, 'weighted': 13.383999999999986, 'thresh': 29.0, 'splits': 181.816}, {'merges': 24.088, 'weighted': 117.98399999999999, 'thresh': 39.5, 'splits': 122.896}, {'merges': 38.448, 'weighted': 315.18400000000003, 'thresh': 56.5, 'splits': 69.296}, {'merges': 83.616, 'weighted': 790.29599999999994, 'thresh': 77.0, 'splits': 45.864}, {'merges': 143.848, 'weighted': 1400.568, 'thresh': 87.0, 'splits': 37.912}, {'merges': 201.464, 'weighted': 1983.7199999999998, 'thresh': 99.0, 'splits': 30.92}, {'merges': 257.68, 'weighted': 2556.4880000000003, 'thresh': 133.5, 'splits': 20.312}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.5, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.250000 and mask 13
+DEBUG:root:Best: {'merges': 19.32, 'weighted': 22.584000000000003, 'thresh': 22.0, 'splits': 215.784}
+DEBUG:root:All: [{'merges': 16.328, 'weighted': 243.99199999999999, 'thresh': 7.0, 'splits': 407.272}, {'merges': 17.072, 'weighted': 170.11999999999998, 'thresh': 14.0, 'splits': 340.84}, {'merges': 18.072, 'weighted': 97.744, 'thresh': 16.5, 'splits': 278.464}, {'merges': 19.32, 'weighted': 22.584000000000003, 'thresh': 22.0, 'splits': 215.784}, {'merges': 21.624, 'weighted': 60.047999999999973, 'thresh': 30.0, 'splits': 156.192}, {'merges': 26.352, 'weighted': 162.37599999999998, 'thresh': 41.272727272727934, 'splits': 101.144}, {'merges': 44.848, 'weighted': 393.12, 'thresh': 61.0, 'splits': 55.36}, {'merges': 90.824, 'weighted': 869.12, 'thresh': 78.5, 'splits': 39.12}, {'merges': 149.776, 'weighted': 1465.1120000000003, 'thresh': 88.0, 'splits': 32.648}, {'merges': 205.688, 'weighted': 2030.1200000000001, 'thresh': 100.5, 'splits': 26.76}, {'merges': 259.192, 'weighted': 2574.3200000000002, 'thresh': 135.0, 'splits': 17.6}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.500000 and mask 13
+DEBUG:root:Best: {'merges': 19.352, 'weighted': 22.039999999999992, 'thresh': 22.0, 'splits': 215.56}
+DEBUG:root:All: [{'merges': 16.464, 'weighted': 242.76800000000003, 'thresh': 7.0, 'splits': 407.408}, {'merges': 17.152, 'weighted': 169.16799999999998, 'thresh': 14.0, 'splits': 340.688}, {'merges': 18.12, 'weighted': 96.943999999999988, 'thresh': 16.5, 'splits': 278.144}, {'merges': 19.352, 'weighted': 22.039999999999992, 'thresh': 22.0, 'splits': 215.56}, {'merges': 21.6, 'weighted': 59.927999999999997, 'thresh': 30.0, 'splits': 156.072}, {'merges': 26.672, 'weighted': 167.15200000000004, 'thresh': 41.5, 'splits': 99.568}, {'merges': 44.88, 'weighted': 393.38400000000001, 'thresh': 61.0, 'splits': 55.416}, {'merges': 93.464, 'weighted': 895.71199999999999, 'thresh': 79.0, 'splits': 38.928}, {'merges': 149.992, 'weighted': 1467.1919999999998, 'thresh': 88.0, 'splits': 32.728}, {'merges': 205.696, 'weighted': 2030.104, 'thresh': 100.5, 'splits': 26.856}, {'merges': 259.208, 'weighted': 2574.4320000000002, 'thresh': 135.0, 'splits': 17.648}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 1.000000 and mask 13
+DEBUG:root:Best: {'merges': 19.192, 'weighted': 25.527999999999992, 'thresh': 22.0, 'splits': 217.448}
+DEBUG:root:All: [{'merges': 16.584, 'weighted': 241.67999999999998, 'thresh': 9.0, 'splits': 407.52}, {'merges': 17.136, 'weighted': 169.65600000000003, 'thresh': 14.0, 'splits': 341.016}, {'merges': 18.048, 'weighted': 99.000000000000028, 'thresh': 16.5, 'splits': 279.48}, {'merges': 19.192, 'weighted': 25.527999999999992, 'thresh': 22.0, 'splits': 217.448}, {'merges': 21.48, 'weighted': 56.408000000000015, 'thresh': 30.0, 'splits': 158.392}, {'merges': 26.664, 'weighted': 165.27999999999997, 'thresh': 41.5, 'splits': 101.36}, {'merges': 45.168, 'weighted': 395.72000000000003, 'thresh': 61.0, 'splits': 55.96}, {'merges': 91.736, 'weighted': 877.82400000000007, 'thresh': 78.5, 'splits': 39.536}, {'merges': 148.232, 'weighted': 1449.104, 'thresh': 87.5, 'splits': 33.216}, {'merges': 205.024, 'weighted': 2023.3599999999997, 'thresh': 100.0, 'splits': 26.88}, {'merges': 259.04, 'weighted': 2572.7600000000002, 'thresh': 134.5, 'splits': 17.64}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.5, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.250000 and mask 15
+DEBUG:root:Best: {'merges': 21.424, 'weighted': 14.592000000000013, 'thresh': 22.0, 'splits': 199.648}
+DEBUG:root:All: [{'merges': 18.472, 'weighted': 195.38399999999996, 'thresh': 7.0, 'splits': 380.104}, {'merges': 19.184, 'weighted': 125.66400000000002, 'thresh': 14.0, 'splits': 317.504}, {'merges': 20.216, 'weighted': 56.447999999999979, 'thresh': 16.5, 'splits': 258.608}, {'merges': 21.424, 'weighted': 14.592000000000013, 'thresh': 22.0, 'splits': 199.648}, {'merges': 23.776, 'weighted': 96.015999999999991, 'thresh': 30.5, 'splits': 141.744}, {'merges': 29.192, 'weighted': 205.416, 'thresh': 42.5, 'splits': 86.504}, {'merges': 50.312, 'weighted': 455.608, 'thresh': 63.5, 'splits': 47.512}, {'merges': 97.256, 'weighted': 937.80799999999999, 'thresh': 79.5, 'splits': 34.752}, {'merges': 154.024, 'weighted': 1511.096, 'thresh': 88.5, 'splits': 29.144}, {'merges': 207.912, 'weighted': 2055.0799999999999, 'thresh': 101.0, 'splits': 24.04}, {'merges': 260.0, 'weighted': 2584.1120000000001, 'thresh': 135.5, 'splits': 15.888}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 0.500000 and mask 15
+DEBUG:root:Best: {'merges': 21.44, 'weighted': 14.975999999999999, 'thresh': 22.0, 'splits': 199.424}
+DEBUG:root:All: [{'merges': 18.544, 'weighted': 194.73599999999999, 'thresh': 7.0, 'splits': 380.176}, {'merges': 19.232, 'weighted': 125.01600000000002, 'thresh': 14.0, 'splits': 317.336}, {'merges': 20.224, 'weighted': 56.015999999999963, 'thresh': 16.5, 'splits': 258.256}, {'merges': 21.44, 'weighted': 14.975999999999999, 'thresh': 22.0, 'splits': 199.424}, {'merges': 23.792, 'weighted': 96.224000000000018, 'thresh': 30.5, 'splits': 141.696}, {'merges': 29.192, 'weighted': 205.32000000000002, 'thresh': 42.5, 'splits': 86.6}, {'merges': 50.256, 'weighted': 454.84000000000003, 'thresh': 63.5, 'splits': 47.72}, {'merges': 97.288, 'weighted': 938.048, 'thresh': 79.5, 'splits': 34.832}, {'merges': 154.104, 'weighted': 1511.7120000000002, 'thresh': 88.5, 'splits': 29.328}, {'merges': 207.832, 'weighted': 2054.2319999999995, 'thresh': 101.0, 'splits': 24.088}, {'merges': 260.048, 'weighted': 2584.5999999999999, 'thresh': 135.5, 'splits': 15.88}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 241.0, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
+DEBUG:root:Showing sigma 1.000000 and mask 15
+DEBUG:root:Best: {'merges': 21.312, 'weighted': 11.975999999999999, 'thresh': 22.0, 'splits': 201.144}
+DEBUG:root:All: [{'merges': 18.664, 'weighted': 193.65599999999998, 'thresh': 9.0, 'splits': 380.296}, {'merges': 19.224, 'weighted': 125.45600000000002, 'thresh': 14.0, 'splits': 317.696}, {'merges': 20.168, 'weighted': 57.872000000000014, 'thresh': 16.5, 'splits': 259.552}, {'merges': 21.312, 'weighted': 11.975999999999999, 'thresh': 22.0, 'splits': 201.144}, {'merges': 23.816, 'weighted': 97.391999999999996, 'thresh': 31.0, 'splits': 140.768}, {'merges': 29.544, 'weighted': 209.864, 'thresh': 43.0, 'splits': 85.576}, {'merges': 50.752, 'weighted': 459.27200000000005, 'thresh': 63.5, 'splits': 48.248}, {'merges': 98.424, 'weighted': 949.16800000000001, 'thresh': 79.5, 'splits': 35.072}, {'merges': 155.232, 'weighted': 1522.856, 'thresh': 88.5, 'splits': 29.464}, {'merges': 208.448, 'weighted': 2060.4879999999998, 'thresh': 101.0, 'splits': 23.992}, {'merges': 260.344, 'weighted': 2587.6240000000003, 'thresh': 135.5, 'splits': 15.816}, {'merges': 304.6, 'weighted': 3046.0, 'thresh': 240.5, 'splits': 0.0}]
+DEBUG:root:-----------------------------------------------
+
+
