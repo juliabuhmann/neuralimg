@@ -16,6 +16,9 @@ from neuralimg.crag import crag_utils as cu
 from pycmc import *
 
 
+""" Class to update CRAGs with hyperparameters and trained models """
+
+
 OUTLIER_VALUE = 10.0
 
 

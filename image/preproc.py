@@ -14,6 +14,7 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 from neuralimg.image import segment as seg
 from neuralimg import dataio
 
+# Data preprocessing functions
 # Border mask functions extracted from repository: 
 # https://github.com/cremi/cremi_python
 

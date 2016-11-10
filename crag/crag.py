@@ -13,6 +13,14 @@ from neuralimg import dataio
 from neuralimg.evaluation import voi
 from neuralimg.evaluation import rand
 
+# This file contains a class for generating CRAGS, extracting features, 
+# computing the best effort from the groundtruth (And computing measures from
+# it).
+#
+# We also provide functions to generate descriptors for slice nodes and 
+# assignment nodes from trained models and update feature/weights for no 
+# assignment edges
+
 
 class LossType(object):
 

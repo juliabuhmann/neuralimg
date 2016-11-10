@@ -15,11 +15,30 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import tempfile
 
-# This class trains and tests a Siamese network that can be trained with pairs or triplets
-# Definition in the network is provided in a configuration file including the parameters.
-# Some minor parameters such as the stride in the convolutional layer and the size and stride of
-# the max pooling have been hardcoded for simplicity, but it can be easily extended in the code
+# This class represents a Convolutional Neural Network that is trained to obtain 
+# discriminative descriptors for patches given instances of image pairs/triplets 
+# Network parameters and configuration settings can be adjusted in the 
+# configuration.
+# 
+# The network is trained under a paired loss for pair datasets and triplet loss 
+# for triplets (see definition in their corresponding classes)
+#
+# During training, at each validation step, the network is tested against a 
+# validation and a test set. Test data is used depending on the network 
+# parameters:
+#
+#   - If a CRAG is provided at creation, patches from random test instances
+#   are compared against slice nodes in the neighboring area in the following 
+#   sections. For each test instance, a metric is computed as the relative 
+#   position where the corresponding patch lies from closest patch (ratio of 0) 
+#   to furthest path (ratio of 1), after removing neighboring outliers.
+#
+#   - Otherwise, patches from random test instances are compared against each 
+#   other. The rank where the corresponding patch is positioned among the other
+#   patches used is used as metric.
 
+# For training the network check "launch_network.py" example
+# For extracting descriptors from the network see "generate_solution.py" example
 
 class NetworkMode(object):
 

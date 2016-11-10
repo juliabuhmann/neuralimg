@@ -15,8 +15,22 @@ from neuralimg.crag import crag_utils as cu
 
 from pycmc import *
 
-# Some extra ideas:
-# - Retrieve image directly in python wrapper instead of writing and reading
+# Dataset generation class. This class generates datasets of pairs or triplets.
+# Given a slice node in a section:
+#   - Positive instaces are built using slice nodes in the next section 
+#   connected through an assignment node and that are part of the best effort
+#   - Negative instaces are built using slice nodes in the next section 
+#   connected through an assignment node and that are NOT part of the best 
+#   effort
+#
+# Image patches are extracted around the correspondign slice nodes and 3 
+# possible image channels are selected: binary, raw and membrane prediction.
+#
+# Pair datasets are build using positive and negative instances.
+# Triplet datasets are built using a reference slice node, its correspondance 
+# slice node in the next section and the closests non-corresponding slice node 
+# in the next section.
+
 
 DATA_TAG = 'data'
 LABEL_TAG = 'labels'

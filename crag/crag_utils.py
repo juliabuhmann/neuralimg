@@ -15,6 +15,9 @@ from neuralimg.image import preproc as pr
 from pycmc import *
 
 
+""" Crag utilities class """
+
+
 class DChannel(object):
 
     RAW = 'raw'

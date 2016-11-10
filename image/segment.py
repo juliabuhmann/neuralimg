@@ -18,6 +18,9 @@ else:
     CV_DIST = cv2.DIST_L2
 
 
+""" Class containing different image segmentation methods """
+
+
 class Segmentation:
 
     __metaclass__ = abc.ABCMeta

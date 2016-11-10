@@ -11,6 +11,15 @@ import tempfile
 from neuralimg import dataio
 from neuralimg.base import pyprocess as prs
 
+# This class is the abstract class for extracting merge history trees
+# from images. A merge history tree contains tab separated lines such as:
+#
+#   region_id1   region_id2  new_region_id   score
+#
+# Where the first and second ids are the identifiers of neighboring regions
+# in an image, the third item is the id of the region that results of merging
+# both areas (the root of the subtree formed by these 3 nodes) and finally we 
+# have got the cost of merging the regions.
 
 class MergeTreeExtractor(object):
 
