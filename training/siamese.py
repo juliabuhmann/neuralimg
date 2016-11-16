@@ -14,6 +14,7 @@ import time
 import datetime as dt
 import matplotlib.pyplot as plt
 import tempfile
+import logging
 
 # This class represents a Convolutional Neural Network that is trained to obtain 
 # discriminative descriptors for patches given instances of image pairs/triplets 
@@ -39,6 +40,8 @@ import tempfile
 
 # For training the network check "launch_network.py" example
 # For extracting descriptors from the network see "generate_solution.py" example
+
+logger = logging.getLogger('training')
 
 class NetworkMode(object):
 
@@ -88,10 +91,10 @@ class SiameseNetwork(object):
         self.test_session = None
 
         if self.data_path is not None:
-            print('Reading data ...')
+            logger.info('Reading data ...')
             self.read_data()
         if self.crag_path is not None:
-            print('Reading CRAG file ...')
+            logger.info('Reading CRAG file ...')
             self.read_crag()
 
     @abc.abstractmethod
@@ -127,7 +130,7 @@ class SiameseNetwork(object):
         self.batch_take = self.config.batch_s
         if self.config.augm is not None:
             if self.config.augm * self.DATA_AUGM > self.config.batch_s:
-                print('Instances augmented cannot be longer than batch size')
+                raise ValueError('Instances augmented cannot be longer than batch size')
             self.batch_take = self.batch_size - (self.DATA_AUGM * self.config.augm)
             self.data_augm_enabled = True
 
@@ -309,19 +312,19 @@ class SiameseNetwork(object):
             # Initialize variables or load them from checkpoint
             check_path = tf.train.latest_checkpoint(outp)
             if check_path is None or retrain is False:
-                print('Initializing network ...')
+                logger.info('Initializing network ...')
                 tf.initialize_all_variables().run()
                 # If provided, load alexnet weights for first layers
                 if alexnet is not None:
-                    print('Loading Alexnet weights for %d layers' % alex_net_layers)
+                    logger.info('Loading Alexnet weights for %d layers' % alex_net_layers)
                     self.load_alexnet(alexnet, alex_net_layers, session)
             else:
-                print('Restoring network from: {}'.format(check_path))
+                logger.info('Restoring network from: {}'.format(check_path))
                 self.load_net_state(outp, saver, session, model_file=check_path)
 
             # Get initial step
             init_step = self.get_step(session) + 1
-            print('Initial step is {}'.format(init_step))
+            logger.info('Initial step is {}'.format(init_step))
 
             # Prepare summaries for Tensorboard visualization
             # session.graph_def gives a deprecated warning but is needed in version 0.8.0
@@ -334,19 +337,15 @@ class SiameseNetwork(object):
                 s = self.training_step(session, step, saver, outp)
                 step = s
 
-            print('Storing final model ...')
+            logger.info('Storing final model ...')
             self.store_net_state(session, saver, step, outp, 'final')
 
-        print('Reached maximum step!')
+        logger.info('Reached maximum step!')
         self.finalize_data()
 
     def training_step(self, session, step, saver, outp):
         """ Performs a single training step """
         tr_data, tr_labels = self.get_batch_trainstep(step)
-
-        # DEBUG
-        m = [tr_data[0][i, ...].mean() for i in range(tr_data[0].shape[0])] 
-        print('Training data means: {}'.format(m))
 
         # Training data - Update gradients
         train_loss, timet, next_step = \
@@ -369,8 +368,8 @@ class SiameseNetwork(object):
 
             # Early stop
             if self.config.early is not None \
-                    and self.track_validation(step, val_loss[0], session, saver, outp) is True:
-                print('Early stopping: Validation loss has not improved' +
+                    and self.track_validation(step, session, saver, outp) is True:
+                logger.warn('Early stopping: Validation loss has not improved' +
                       ' for {} steps. Last best model has been stored'.format(self.config.early))
                 self.finalize_data()
                 sys.exit()
@@ -380,7 +379,7 @@ class SiameseNetwork(object):
 
         # Save state of network for visualization
         if step % self.config.summary_int == 0:
-            print('Storing summary ...')
+            logger.info('Storing summary ...')
             self.store_summary(tr_data, tr_labels, step, session)
             self.sum_writer.flush()
 
@@ -430,26 +429,26 @@ class SiameseNetwork(object):
             else nu.get_random(subset, len(self.val_ind))
         return self.get_data(inds)
 
-    def track_validation(self, step, new_value, session, saver, outp):
+    def track_validation(self, step, session, saver, outp):
         """ Tracks the window of validation losses and checks whether the
         loss value has increased for the last steps or whether it has decreased
         less than a minimum amount. Returns whether training should stop
         according to an early stopping criteria"""
-        print('Checking early stop ...')
-        if len(self.val_loss) < self.config.early:
-            print('Need at least {} values'.format(self.config.early))
+        logger.info('Checking early stop ...')
+        if len(self.val_loss) <= self.config.early:
+            logger.info('Need at least {} values'.format(self.config.early))
             return False
-        if self.val_loss[(step % self.config.loss_int) - self.config.early][0] \
-                <= (new_value + self.config.min_decrease):
+        if self.val_loss[-self.config.early-1][1] \
+                <= (self.val_loss[-1][1] + self.config.min_decrease):
             return True
         else:
-            nu.store_checkpoint(session, saver, step, outp, self.metadata, 'early')
+            self.store_net_state(session, saver, step, outp, 'early')
             return False
 
     def get_batch_trainstep(self, step):
         """ Returns a batch from the training data according to the current step"""
         offset = (step * self.batch_take) % (self.get_train_size() - self.batch_take)
-        print ('%s: step %d (%d-%d) (%d data, %d augmented)'
+        logger.info('%s: step %d (%d-%d) (%d data, %d augmented)'
                % (dt.datetime.now(), step, offset, offset + self.batch_take - 1,
                   self.batch_take, self.batch_size - self.batch_take))
         return self.get_batch_train(offset, offset + self.batch_take)
@@ -472,14 +471,10 @@ class SiameseNetwork(object):
         self.check_options(nu.load_configuration(folder))
         g, saver = self._initialize_graph(NetworkMode.OUTPUT)
         # Initialize session: NEEDS TO BE CLOSED
-        #self.test_session = tf.Session(graph=g, config=self.configure_sess())
         self.test_session = tf.InteractiveSession(graph=g, config=self.configure_sess())
-        #with tf.Session(graph=g, config=self.configure_sess()) as session:
-        # Load model and writer
-        #self.load_net_state(folder, saver, self.test_session)
         self.load_net_state(folder, saver, self.test_session)
-        print('Test initialized properly!')
-        print('Warning: Make sure the data fed follows the same characteristics' +
+        logger.info('Test initialized properly!')
+        logger.info('Warning: Make sure the data fed follows the same characteristics' +
               ' as the data used for training (e.g. normalization) or results may not be good')
 
     def finalize_test(self):
@@ -487,7 +482,7 @@ class SiameseNetwork(object):
         if self.data_path is not None:
             self.finalize_data()
         self.test_session.close()
-        print('Test finalized properly!')
+        logger.info('Test finalized properly!')
 
     def compute_ranks(self, dist, data, selected):
         """ Computes the rank score for the reference instance and its
@@ -595,7 +590,7 @@ class SiameseNetwork(object):
             data, labels = self.get_data(inds)
             l = self.perform_test_loss(data, labels, self.test_session)
             loss.append(l[0])
-            print('Loss for batch (%d-%d) is %f' % (i, i + num, l))
+            logger.info('Loss for batch (%d-%d) is %f' % (i, i + num, l))
 
         return loss
 
@@ -652,7 +647,7 @@ class SiameseNetwork(object):
         ranks = []
         for i in subset_inds:
 
-            print('Testing positive instance %d' % i)
+            logger.debug('Testing positive instance %d' % i)
 
             if crag is None:
                 eval_data = self.build_evaluation_from_test(self.test_ind, i, others)
@@ -663,12 +658,12 @@ class SiameseNetwork(object):
             selected = selected if crag is not None else 1
             rank, order = self._query_ranks(eval_data, session, dist, selected)
             ranks.append(rank)
-            print('Tested instance %d, got rank %d' % (i, rank))
+            logger.debug('Tested instance %d, got rank %d' % (i, rank))
 
         mean_rank = np.mean(ranks)
-        print('Mean rank is {}'.format(mean_rank))
+        logger.debug('Mean rank is {}'.format(mean_rank))
         best = 'high' if order is True else 'low'
-        print('For the measure type selected, %s are preferred' % best)
+        logger.debug('For the measure type selected, %s are preferred' % best)
         return mean_rank
 
     def _track_test_rank(self, session, step, crag, test_subset=10, others_num=25):
@@ -796,10 +791,13 @@ class SiameseNetwork(object):
         if self.config.l2_reg > 0:
             # If L2 regularization enabled, sum over all parameters
             # and add them to the general loss term
+            # TODO: we may also consider the batch normalization parameters, if 
+            # requested
             ws = self._define_weights()
             with tf.variable_scope('l2_term'):
                 l2_term = tf.constant(0.0)
-                for (w, b) in ws:
+                for curr_w in ws:
+                    w, b = curr_w[0], curr_w[1]
                     l2_w = nu.l2_penalty(w, self.config.l2_reg)
                     l2_b = nu.l2_penalty(b, self.config.l2_reg)
                     l2_term = l2_w + l2_b + l2_term
@@ -877,17 +875,17 @@ class SiameseNetwork(object):
         base = total - l2
         format_str = ('---> %s: step %d [%s] Loss = %.2f (Base loss = %.2f, L2 loss = %.2f)' +
                       '(%.1f examples/sec; %.3f sec/batch)')
-        print (format_str % (dt.datetime.now(), step, label, total, base, l2,
+        logger.info(format_str % (dt.datetime.now(), step, label, total, base, l2,
                              examples_per_sec, float(duration)))
 
     def display_loss(self, save=None):
         """ Plots the training and the validation evolution.
         If save enabled, it is not shown but saved into the given path """
         x = np.arange(0, len(self.train_loss)) * self.config.loss_int
-        plt.plot(x, [i[0] for i in self.train_loss], label='training')
-        plt.plot(x, [i[1] for i in self.train_loss], label='training_l2reg')
-        plt.plot(x, [i[0] for i in self.val_loss], label='validation')
-        plt.plot(x, [i[1] for i in self.val_loss], label='validation_l2reg')
+        plt.plot(x, [i[1] for i in self.train_loss], label='training')
+        plt.plot(x, [i[2] for i in self.train_loss], label='training_l2reg')
+        plt.plot(x, [i[1] for i in self.val_loss], label='validation')
+        plt.plot(x, [i[2] for i in self.val_loss], label='validation_l2reg')
         fig = plt.gcf()
         plt.legend(loc=2)
         plt.xlabel('Step')
@@ -917,16 +915,13 @@ class SiameseNetwork(object):
         trainable = [i.name for i in tf.trainable_variables()]
         vars_to_init = list(set(tf.all_variables()) - set(tf.trainable_variables()))
         vars_to_init_names = [i.name for i in vars_to_init]
-        print('All: {}'.format(all_names))
-        print('Trainable: {}'.format(trainable))
-        print('Variables to initialize: {}'.format(vars_to_init))
         tf.initialize_variables(vars_to_init).run(session=session)
         # Load model from folder or file accordingly
         if model_file is None:
-            print('Loading model from folder {}'.format(outp))
+            logger.info('Loading model from folder {}'.format(outp))
             nu.restore_model(session, saver, outp)
         else:
-            print('Loading model from {}'.format(model_file))
+            logger.info('Loading model from {}'.format(model_file))
             saver.restore(session, model_file)
 
     def store_net_state(self, session, saver, step, outp, name):

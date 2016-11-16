@@ -7,6 +7,10 @@ import tensorflow as tf
 import numpy as np
 import os
 import glob
+import logging
+
+
+logger = logging.getLogger('training')
 
 
 def create_conv_weights(i, ksize, inps, outs, bn, m=0.0, stddev=1e-1, bias=0):
@@ -202,7 +206,6 @@ def restore_model(session, saver, path):
     model_paths.sort()
     if len(model_paths) == 0:
         raise ValueError('Model path not found in %s' % path)
-    print('Loading network from: {}'.format(model_paths[-1]))
     saver.restore(session, model_paths[-1])
 
 
@@ -245,8 +248,6 @@ def read_losses(outp):
             split = line.strip('\n').split('\t')
             train.append(split[:3])
             val.append([split[0]] + split[3:])
-    print('Read training loss: {}'.format(train))
-    print('Read validation loss: {}'.format(val))
     return train, val 
 
 
@@ -281,7 +282,7 @@ def load_file_ext(folder, ext):
     if len(confs) == 0:
         raise ValueError('No %s file found in folder %s' % (ext, folder))
     elif len(confs) > 1:
-        print('Warning: Found several files with extension %s. Picking %s' % ext, confs[0])
+        logger.warn('Warning: Found several files with extension %s. Picking %s' % ext, confs[0])
     return confs[0]
 
 
@@ -316,10 +317,10 @@ def evaluate_test(metric, incr, selected):
     	distance metric (False)
     :param select: Index index of the first non-matching pattern 
 	in the metrics list """
-    print('Distances {}'.format(metric))
+    logger.debug('Distances {}'.format(metric))
     ranks = [i[0] for i in sorted(enumerate(metric),
                                   key=lambda x: x[1], reverse=incr)]
-    print('Ranks {}'.format(ranks))
+    logger.debug('Ranks {}'.format(ranks))
     # Compute sum of ranks for matching patterns. If they are in any position
     # within [0, selected) their rank is computed as 0
     ranks_out = [r for (i, r) in enumerate(ranks[:selected]) if r >= selected]

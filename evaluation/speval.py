@@ -22,8 +22,7 @@ from neuralimg.base import pyprocess as ps
 from neuralimg.image import segment as seg
 from neuralimg.image import preproc as pr
 
-logging.basicConfig(filename='evaluationB.log',level=logging.DEBUG)
-
+logger = logging.getLogger('evaluation')
 
 def call_ted(segmented, truth, shift, files=None, split_background=False, threads=5):
     """ Calls TED on the given groundtruth and superpixel files
@@ -123,10 +122,10 @@ def optimal_segmentation(masks, sigmas, membranes, truth, ted_shift, split_bg=Fa
     # Show stats
     for i in stats:
         best, all_s, sigma, mask = i
-        logging.debug('Showing sigma %f and mask %d' % (sigma, mask))
-        logging.debug('Best: {}'.format(best))
-        logging.debug('All: {}'.format(all_s))
-        logging.debug('-----------------------------------------------\n\n')
+        logger.debug('Showing sigma %f and mask %d' % (sigma, mask))
+        logger.debug('Best: {}'.format(best))
+        logger.debug('All: {}'.format(all_s))
+        logger.debug('-----------------------------------------------\n\n')
     # Return best
     score = [i[0]['merges'] for i in stats] # Select the ones with less merges
     return stats[score.index(min(score))]
