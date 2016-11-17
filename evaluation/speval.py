@@ -371,6 +371,11 @@ def evaluate_supervoxels(sp_folder, gt_folder):
     """
     sp_files = dataio.FileReader(sp_folder).extract_files()
     gt_files = dataio.FileReader(gt_folder).extract_files()
+
+    if len(sp_files) != len(gt_files):
+        raise ValueError('Both folders must contain the same number '
+                + ' of images and have a proper ordering')
+
     r, vs, vm = 0.0, 0.0, 0.0
     for (s, g) in zip(sp_files, gt_files):
         logging.debug('Evaluating image %s against %s' % (s, g))
@@ -379,22 +384,23 @@ def evaluate_supervoxels(sp_folder, gt_folder):
         v = voi.voi(sp, gt)
         vs += v[0]
         vm += v[1]
-    return r, [vs, vm]
+    return r/len(sp_files), [vs/len(sp_files), vm/len(sp_files)]
 
 
-def evaluate_crag(sps, gts, raws, mems, hists, create_conf, features_conf, 
-    effort_conf, dist, thresh, tmp=None):
+def evaluate_crag(sps, gts, raws, mems, hists, dist, thresh, max_merges, 
+        res, threads, indexes=None, tmp=None):
     """ Single CRAG evaluation using Assignment loss for the best effort extraction
         :param sps: Superpixel folder 
         :param gts: Groundtruth folder
         :param raws: Raw image folder
         :param mems: Membrane probability folder
         :param hists: Merge tree histories 
-        :param create_conf: Project creation configuration file
-        :param features_conf: Feature computation configuration file
-        :param effort_conf: Effort configuration file
         :param dist: List of distances to evaluate
         :param thresh: Threshold to apply to the merge tree history
+        :param max_merges: Maximum depth in the crag trees
+        :param res: Resolution of the CRAG volumes
+        :param threads: Number of threads to use for the CRAG processes
+        :param indexes: Indexes of sections to evaluate
         :param tmp: Folder to use as temporary folder. Set to None to use OS one
     """
 
@@ -411,22 +417,32 @@ def evaluate_crag(sps, gts, raws, mems, hists, create_conf, features_conf,
 
     # Generate crag, extract features and best effort
     cragen = cr.CragGenerator(tmp_out)
-    cragen.generate_crag(gts, sps, raws, mems, create_conf, max_zlink=dist, 
-        histories=hists, histories_thresh=thresh)
-    cragen.extract_features(features_conf)
-    cragen.extract_best_effort(effort_conf, cr.LossType.ASSIGNMENT, best_folder)
+    cragen.generate_crag(groundtruth=gts, 
+            superpixels=sps, 
+            raws=raws, 
+            membranes=mems, 
+            max_zlink=dist, 
+            histories=hists, 
+            histories_thresh=thresh,
+            max_merges=max_merges,
+            overwrite=True,
+            indexes=indexes,
+            res=res,
+            threads=threads)
+
+    cragen.extract_best_effort(cr.LossType.ASSIGNMENT, best_folder, threads=threads)
 
     # Evaluate best effort against groundtruth and save results
-    rand, voi = cragen.evaluate_best_effort()
+    rand, voi_split, voi_merge  = cragen.evaluate_best_effort()
 
     # Delete temp folder
     shutil.rmtree(tmp_out)
 
-    return {'rand': rand, 'voi': voi, 'dist': dist}
+    return {'rand': rand, 'voi_split': voi_split, 'voi_merge': voi_merge, 'dist': dist}
 
 
-def evaluate_crags(sps, gts, raws, mems, hists, create_conf, features_conf, 
-    effort_conf, dists, nworkers=3, thresh=None, outp=None, tmp=None):
+def evaluate_crags(sps, gts, raws, mems, hists, max_merges, dists, res, threads, 
+        indexes=None, nworkers=3, thresh=None, outp=None, tmp=None):
     """ Returns the stats of evaluating the best effort from the crag and
     the groundtruth with each of the maximum hausdorff distance using heuristic loss
         :param sps: Superpixel folder 
@@ -434,17 +450,17 @@ def evaluate_crags(sps, gts, raws, mems, hists, create_conf, features_conf,
         :param raws: Raw image folder
         :param mems: Membrane probability folder
         :param hists: Merge tree histories 
-        :param create_conf: Project creation configuration file
-        :param features_conf: Feature computation configuration file
-        :param effort_conf: Effort configuration file
+        :param max_mergess: Maximum depth in the crag trees
         :param dists: List of distances to evaluate
+        :param res: Resolution of the CRAG volumes
+        :param threads: Number of threads to use for the CRAG processes
+        :param indexes: Indexes of sections to evaluate
+        :param nworkers: Number of workers to use. Note that number of process will
+            be in the order of threads * nworkers. Keep this parameter low.
         :param thresh: Threshold to apply to the merge tree history
-        :param dists: List of distances to evaluate
-        :param nworkers: Number of workers to use
         :param outp: Output file where to store the resulting stats. Set to None to disable
         :param tmp: Folder to use as temporary folder. Set to None to use OS one
     """
-
     # Create directory if provided
     if tmp is not None:
         create_dir(tmp)
@@ -454,51 +470,25 @@ def evaluate_crags(sps, gts, raws, mems, hists, create_conf, features_conf,
     with Parallel(n_jobs=nworkers) as parallel:
         # Iterate through possible distances
         for d in dists:
-            jobs.append(delayed(evaluate_crag)(sps, gts, raws, mems, hists, create_conf,
-                features_conf, effort_conf, dist=d, thresh=thresh, tmp=tmp))
+            jobs.append(delayed(evaluate_crag)
+                        (sps=sps, 
+                         gts=gts, 
+                         raws=raws, 
+                         mems=mems, 
+                         hists=hists, 
+                         dist=d,
+                         thresh=thresh, 
+                         max_merges=max_merges, 
+                         res=res, 
+                         threads=threads,
+                         indexes=indexes, 
+                         tmp=tmp))
         stats = parallel(jobs)
 
     if outp is not None:
         save_stats(stats, outp)
 
     return stats
-
-
-def evaluate_crag_weights(path, config_file, end_scores, merge_scores, outp, tmp=None, nworkers=3):
-    """ Evaluates the RAND and VOI for the best effort using a grid search approach for both
-    the merge and the ending thao
-        :param path: Path to the CRAG to test
-        :param config_file: Best effort configuration file
-        :param end_scores: List of end_scores to test
-        :param merge_scores: List of merge scores to test
-        :param outp: Path where to store the stats
-        :parma tmp: Path to use as temporary file. Set to None for using the default OS folder
-        :param nworkers: Number of parallel workers to use
-    """
-    # Initialize tmp folder
-    if tmp is None:
-        tmp_path = tempfile.mkdtemp()
-    else:
-        create_dir(tmp)
-        tmp_path = tmp
-
-    # Create a copy of the original CRAG
-    crag_path = os.path.join(tmp_path, 'crag.h5')
-    shutil.copyfile(path, crag_path)
-
-    # Generate a job for each configuration
-    jobs = []
-    with Parallel(n_jobs=nworkers) as parallel:
-        for e in end_scores:
-            for m in merge_scores:
-                jobs.append(delayed(cr.evaluate_assignation)(crag_path, m, e, 
-                config_file, tmp_path))
-        stats = parallel(jobs)
-
-    # Delete temporary folder
-    shutil.rmtree(tmp_path)
-
-    save_stats(stats, outp)
 
 
 def segmentation_grid(membranes, groundtruth, masks, sigmas, ted_shift, split_bg, workers=2):

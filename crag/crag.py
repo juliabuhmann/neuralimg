@@ -343,8 +343,8 @@ class CragGenerator(object):
         :param path: Path to the HDF5 file or to the CRAG folder
         :param costs_name: Name of the costs to display. By default visualizes the 'best-effort' costs """
         args = [ "crag_viewer", "-p", self.project_file, "--showCosts=" + costs_name]
-        #crag_viewer -p sampleA/mc_heuristic_600/hdf/training_dataset.h5 "$@"
-        p = Process(args, os.path.join(self.logs, 'view.log'))
+        logs = None if logs is None else os.path.join(logs, 'view.log')
+        p = Process(args, logs)
         p.execute()
 
     def get_crag_file(self):

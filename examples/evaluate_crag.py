@@ -10,19 +10,42 @@ gts = 'data/crag/gt'
 sps = 'data/crag/sps'
 raws = 'data/crag/raw'
 histories_mc = os.path.join(sps, 'histories_mc')
-histories_gala = os.path.join(sps, 'histories_gala')
+thresh = 0.15  # example
 membranes = 'data/crag/mem_norm'
+tmp_path = '/DataDisk/morad/tmp'    # use a temporary path with enough space
 
-create_conf = 'data/crag/config/create_training_project.conf'
-features_conf = 'data/crag/config/extract_training_features.conf'
-effort_conf = 'data/crag/config/extract_best-effort.conf'
+dists = [350]
 
-dists = [150, 250, 350]
+######### We can evaluate a single CRAG
+stats = ev.evaluate_crag(sps=sps,
+                    gts=gts, 
+                    raws=raws, 
+                    mems=membranes, 
+                    hists=histories_mc, 
+                    dist=dists[0], 
+                    thresh=thresh,
+                    max_merges=5,
+                    res=[4,4,40],
+                    threads=3,
+                    indexes=None,   # Can use a set of indices here [init, end]
+                    tmp=tmp_path)
+print(stats)
 
-# Computed best thresh for example data in MC: 0.1652
-ev.evaluate_crags(sps, gts, raws, membranes, histories_mc, create_conf, features_conf, 
-    effort_conf, dists, nworkers=3, thresh=0.1652, outp='stats_mc_test.dat')
+######### Or we can evaluate CRAGS given a set of Hausdorff distances
+otuput_file = 'stats_crag.dat'
+stats = ev.evaluate_crags(sps=sps,
+                    gts=gts, 
+                    raws=raws, 
+                    mems=membranes, 
+                    hists=histories_mc, 
+                    max_merges=5,
+                    dists=dists, 
+                    res=[4,4,40],
+                    threads=3,
+                    indexes=None,   # Can use a set of indices here [init, end]
+                    nworkers=3,
+                    thresh=thresh,
+                    outp='stats_crag.dat',
+                    tmp=tmp_path)
+print(stats)
 
-# Computed best thresh for example data in Gala: 0.3267
-ev.evaluate_crags(sps, gts, raws, membranes, histories_gala, create_conf, features_conf, 
-    effort_conf, dists, nworkers=3, thresh=0.3267, outp='stats_gala_test.dat')
