@@ -353,8 +353,15 @@ def get_other_slice(crag, node, an):
 
 
 def get_depth(node, volumes):
-    """ Returns the depth of the node """
-    return volumes.getVolume(node).getBoundingBox().min().z()
+    """ Returns the absolute depth of the node """
+    return volumes.getVolume(node).getBoundingBox().min().z() # Use min z as reference for depths
+
+
+def get_slice_depth(sl):
+    """ Returns the depth of the input slice relative to the resolution
+    of the volume it is contained """
+    zres = sl.getResolution().z()
+    return sl.getBoundingBox().min().z()/zres # Use min z as reference for depths
 
 
 def get_slice(volumes, n):

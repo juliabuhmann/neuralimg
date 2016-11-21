@@ -302,17 +302,15 @@ class DatasetGen(object):
         """ Returns whether any of the sections in the input instance is linked
         to any of the sections to exclude """
         for i in slices:
-            zres = i.getResolution().z()
-            min_z = i.getBoundingBox().min().z()/zres
-            max_z = i.getBoundingBox().min().z()/zres
+            depth = cu.get_slice_depth(i)
             # Breaks lower bound interval
-            if init is not None and (min_z < init or max_z < init):
+            if init is not None and (depth < init):
                 return True
             # Breaks upper bound interval:
-            if end is not None and (min_z > end or max_z > end):
+            if end is not None and (depth > end):
                 return True
             # Check if excluded from banned sections
-            if min_z in excluded or max_z in excluded:
+            if depth in excluded:
                 return True
         return False
 

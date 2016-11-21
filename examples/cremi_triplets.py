@@ -14,8 +14,8 @@ crags = [crag_sampleA, crag_sampleB, crag_sampleC]
 names = ['sampleA', 'sampleB', 'sampleC']
 
 
-# Some predictions are really poor due to noisy membrane predictions
-# It is best to ignore them during the data creation to avoid bad quality data
+# Some membrane prediction sections are really poor due to noise. It is best to 
+# ignore them during the data creation to avoid bad quality data
 # Not to be modified (just if membrane predictions improved)
 excluded = [
         [], # Sample A
@@ -27,11 +27,16 @@ root_output = '/DataDisk/morad/all/datasets'    # Destination root output
 create_dir(root_output)
 data_config = 'data/confs/data.conf'    # Change data settings according to needs
 
+section_init = 0    # First section to consider
+section_end = 99    # Last section to consider
+
 # Generate all datasets
 for (crag, ex, name) in zip(crags, excluded, names):
     dataset_path = os.path.join(root_output, name + '.h5')
     print('Generating data for crag %s into %s' % (crag, dataset_path))
     dgen_pair = dd.TripletDataGen(data_config, dataset_path)
-    crag_opts = dd.DataGenOptions(crag, init=None, end=None, exclude=ex)
+    crag_opts = dd.DataGenOptions(crag, init=section_init,
+                                        end=section_end,
+                                        exclude=ex)
     dgen_pair.generate_dataset([crag_opts])
 
