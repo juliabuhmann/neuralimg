@@ -9,7 +9,7 @@ It requires [conda](http://conda.pydata.org/miniconda.html) to be installed.
 Requirements to install:
 
 - Beforehand, the following utilities must be installed:
-  - [Candidate_mc](https://github.com/DaniUPC/candidate_mc)
+  - [Candidate_mc](https://github.com/funkey/candidate_mc)
   - [TED](https://github.com/DaniUPC/ted)
 
 We assume both projects have been installed in the HOME directory.
