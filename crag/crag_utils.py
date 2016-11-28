@@ -436,5 +436,8 @@ def build_image(section, ein, ebb, clabels, positions, imh, imw, padding, norm):
         img[positions[i], ...] = get_resized_slice(vol, bb, ev, tmpath, 
             imh, imw, norm, binary)
 
+    # Clean directory
+    shutil.rmtree(tmpath)
+
     return img
 
