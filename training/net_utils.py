@@ -101,7 +101,7 @@ def batch_normalization(inp, scale, beta):
     return scale * hat + beta
 
 
-def define_fully_layer(data, w, b, i, prefix, dropout):
+def define_fully_layer(data, w, b, i, prefix, dropout, normalize_unit=False, activation=False):
     """ Returns a fully connected layer with the input parameters. Weights are initialized as truncated
     normals around 0 and stdev of 1e-3 and bias as 0.
         :param data: Input placeholder
@@ -112,7 +112,15 @@ def define_fully_layer(data, w, b, i, prefix, dropout):
         :param dropout: Keep probability of the dropout (in interval [0,1])
     """
     # Perform ReLU(x) = max(0, x)
-    relu = tf.nn.relu(tf.nn.bias_add(tf.matmul(data, w), b), name=prefix + '-relufc' + str(i))
+    relu = tf.nn.bias_add(tf.matmul(data, w), b)
+    if activation:
+        relu = tf.nn.relu(relu, name=prefix + '-relufc' + str(i))
+    else:
+        print 'no activation is added to fully connected layer'
+
+    if normalize_unit:
+        relu = tf.contrib.layers.layers.unit_norm(relu, 1)
+        logging.info('embedding is unit normed')
 
     # Add dropout
     relu = tf.nn.dropout(relu, dropout)

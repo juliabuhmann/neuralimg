@@ -38,23 +38,32 @@ class FullyCLayer(object):
 
     """ Fully connected layer. Contains following information:
         - hidden = Number of hidden units in the layer
+        - norm_unit = Whether layer output should be normalized to unit length
+        - activation = Whether activation (relu) should be performed
     """
 
     def __init__(self, hidden=None):
         self.hidden = hidden
+        self.norm_unit = False
+        self.activation = True
 
     def from_config(self, name, config):
         section = config[name]
         self.hidden = section.getint('hidden')
+        self.norm_unit = section.getboolean('norm_unit')
+        self.activation = section.getboolean('activation')
+
 
     def store(self, name, config):
         config[name] = {}
         config[name]['hidden'] = str(self.hidden)
+        config[name]['norm_unit'] = str(self.norm_unit)
+        config[name]['activation'] = str(self.activation)
 
 
 class NetworkConf(object):
 
-    """ List of parameters to configure a dataset generation 
+    """ List of parameters to configure a dataset generation
 
         batch_s: Batch training size
         lr: Learning rate (TODO)
@@ -91,7 +100,7 @@ class NetworkConf(object):
 
     def __init__(self, batch_s=None, lr=None, max_steps=None, keep_p=None, workers=None, early=None,
         augm=None, valid_batch=None, loss_int=None, sum_int=None, checkp_int=None, l2=None, mem=None,
-                 decrease=None, conv_layers=[], full_layers=[]):
+                 decrease=None, training_perc=None, dataset_size = None, conv_layers=[], full_layers=[]):
         self.cnv_layers = conv_layers
         self.full_layers = full_layers
         self.maxp_pools = 0
@@ -109,7 +118,10 @@ class NetworkConf(object):
         self.l2_reg = l2
         self.mem = mem
         self.min_decrease = decrease
+        self.training_perc = training_perc
+        self.dataset_size = dataset_size
         self.p_sec = 'Parameters'
+
 
     def read(self, path):
         """ Reads the dataset generation configuration from the file """
@@ -133,12 +145,16 @@ class NetworkConf(object):
         self.l2_reg = config[self.p_sec].getfloat('l2_reg')
         self.mem = config[self.p_sec].getfloat('memory')
         self.min_decrease = config[self.p_sec].getfloat('min_decrease')
+        self.training_perc = config[self.p_sec].getfloat('training_perc')
+        self.dataset_size = config[self.p_sec].getint('dataset_size')
+
 
         self._read_conv_layers(config)
         self._read_fullyc_layers(config)
 
         # Read number of max pools
         self.maxp_pools = sum([1 if i.maxp else 0 for i in self.cnv_layers])
+        print('batch size %i' %self.batch_s)
 
         # Raise warning if big batch size has been chosen
         if self.batch_s > 500 or self.valid_batch > 500:
@@ -178,7 +194,8 @@ class NetworkConf(object):
         paramsec['checkpoint_interval'] = str(self.checkpoint_int)
         paramsec['l2_reg'] = str(self.l2_reg)
         paramsec['memory'] = str(self.mem)
-        paramsec['min_decrease'] = str(self.min_decrease)
+        paramsec['training_perc'] = str(self.training_perc)
+        paramsec['dataset_size'] = str(self.dataset_size)
 
         # Write one section for each conv layer
         for (i, l) in enumerate(self.cnv_layers):

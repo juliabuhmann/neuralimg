@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
-from neuralimg.crag import crag_utils as cu
+try:
+    from neuralimg.crag import crag_utils as cu
+except ImportError:
+    print 'crag not installed'
 from neuralimg.training import net_utils as nu
 from neuralimg import dataio
 
@@ -15,26 +18,27 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import tempfile
 import logging
+import random
 
-# This class represents a Convolutional Neural Network that is trained to obtain 
-# discriminative descriptors for patches given instances of image pairs/triplets 
-# Network parameters and configuration settings can be adjusted in the 
+# This class represents a Convolutional Neural Network that is trained to obtain
+# discriminative descriptors for patches given instances of image pairs/triplets
+# Network parameters and configuration settings can be adjusted in the
 # configuration.
-# 
-# The network is trained under a paired loss for pair datasets and triplet loss 
+#
+# The network is trained under a paired loss for pair datasets and triplet loss
 # for triplets (see definition in their corresponding classes)
 #
-# During training, at each validation step, the network is tested against a 
-# validation and a test set. Test data is used depending on the network 
+# During training, at each validation step, the network is tested against a
+# validation and a test set. Test data is used depending on the network
 # parameters:
 #
 #   - If a CRAG is provided at creation, patches from random test instances
-#   are compared against slice nodes in the neighboring area in the following 
-#   sections. For each test instance, a metric is computed as the relative 
-#   position where the corresponding patch lies from closest patch (ratio of 0) 
+#   are compared against slice nodes in the neighboring area in the following
+#   sections. For each test instance, a metric is computed as the relative
+#   position where the corresponding patch lies from closest patch (ratio of 0)
 #   to furthest path (ratio of 1), after removing neighboring outliers.
 #
-#   - Otherwise, patches from random test instances are compared against each 
+#   - Otherwise, patches from random test instances are compared against each
 #   other. The rank where the corresponding patch is positioned among the other
 #   patches used is used as metric.
 
@@ -42,6 +46,7 @@ import logging
 # For extracting descriptors from the network see "generate_solution.py" example
 
 logger = logging.getLogger('training')
+CUDA_VISIBLE_DEVICES=0
 
 class NetworkMode(object):
 
@@ -75,6 +80,7 @@ class SiameseNetwork(object):
         self.data_augm_enabled, self.config = False, None
         # Indices
         self.train_ind, self.val_ind, self.test_ind = None, None, None
+        self.dataset_size = None
         # Writing variables
         self.summary_op, self.sum_writer = None, None
         # Image and batch params
@@ -96,6 +102,9 @@ class SiameseNetwork(object):
         if self.crag_path is not None:
             logger.info('Reading CRAG file ...')
             self.read_crag()
+
+        # Tensorflow summaries
+        self.validation_summaries = []
 
     @abc.abstractmethod
     def get_placeholder_suffixes_specific(self):
@@ -122,7 +131,6 @@ class SiameseNetwork(object):
             :param path: Path where configuration is stored
         """
         self.config = nu.read_conf(path)
-
         # Store 2 batch sizes for data augmentation. Data augmented
         # option is the number of images d to use to generate versions.
         # So 8 x d images in the batch correspond to 'replicas'.
@@ -133,6 +141,12 @@ class SiameseNetwork(object):
                 raise ValueError('Instances augmented cannot be longer than batch size')
             self.batch_take = self.batch_size - (self.DATA_AUGM * self.config.augm)
             self.data_augm_enabled = True
+        if self.config.dataset_size is not None:
+            self.dataset_size = self.config.dataset_size
+
+        logging.info('total dataset size: %i, trainingset size: %i' %(self.dataset_size, self.get_train_size()))
+
+
 
     def read_data(self):
         """ Reads the data characteristics from the dataset provided  """
@@ -158,7 +172,7 @@ class SiameseNetwork(object):
         # Store channel map and configuration
         data_config_dict = {k: f.attrs.values()[i]
                             for (i, k) in enumerate(f.attrs.keys())}
-        self.metadata = {'clabels': f['clabels'][:], 'cpositions': f['cpositions'][:], 
+        self.metadata = {'clabels': f['clabels'][:], 'cpositions': f['cpositions'][:],
 		'data_config': data_config_dict}
 
         f.close()
@@ -185,7 +199,7 @@ class SiameseNetwork(object):
         """ Initializes all placeholders needed in the network """
         self.pls, self.pl_names = self.get_data_placeholders(mode) # Data
         self.pl_labels = tf.placeholder(tf.float32, shape=[None], name='labels')
-        self.pl_dropout = tf.placeholder(tf.float32, name='keep_probability') 
+        self.pl_dropout = tf.placeholder(tf.float32, name='keep_probability')
         self.pl_aug = tf.placeholder(tf.int32, name='augment_instances', shape=[None])
 
     def get_data_placeholders(self, mode):
@@ -225,9 +239,9 @@ class SiameseNetwork(object):
                 # Flip up and down for each rotation and append
                 for j in rotations:
                     tf.image.flip_up_down(j)
-                    data = tf.concat(0, [data, 
+                    data = tf.concat(0, [data,
                                          tf.expand_dims(tf.image.flip_up_down(j), 0)])
-                    data = tf.concat(0, [data, 
+                    data = tf.concat(0, [data,
                                          tf.expand_dims(tf.image.flip_left_right(j), 0)])
 
         return data
@@ -260,10 +274,10 @@ class SiameseNetwork(object):
         duration = time.time() - start_time
         return [lt, lt2], duration, next_step
 
-    def compute_validation_loss(self, session):
+    def compute_validation_loss(self, session, step=None):
         """ Returns the validation loss and the time taken """
         start_time = time.time()
-        vloss = self.perform_validation(session)
+        vloss = self.perform_validation(session, step)
         duration = time.time() - start_time
         return vloss, duration
 
@@ -300,6 +314,7 @@ class SiameseNetwork(object):
                 raise ValueError('If a configuration is not found in the ' +
                     'folder model, one must be provided')
             # Read configurations, create output folder
+            logging.info('loading config data from %s' %config_path)
             self.check_options(config_path)
             dataio.create_dir(outp)
             # If training from scratch copy config in out folder
@@ -329,7 +344,9 @@ class SiameseNetwork(object):
             # Prepare summaries for Tensorboard visualization
             # session.graph_def gives a deprecated warning but is needed in version 0.8.0
             self.summary_op = tf.merge_all_summaries()
-            self.sum_writer = tf.train.SummaryWriter(logs, session.graph_def)
+            self.sum_writer = tf.train.SummaryWriter(logs + 'train', session.graph_def)
+            self.sum_writer_test = tf.train.SummaryWriter(logs + 'test')
+
 
             # Train until maximum step is reached
             step = init_step
@@ -345,17 +362,20 @@ class SiameseNetwork(object):
 
     def training_step(self, session, step, saver, outp):
         """ Performs a single training step """
+        start_time = time.time()
         tr_data, tr_labels = self.get_batch_trainstep(step)
-
+        get_data_duration = time.time() - start_time
         # Training data - Update gradients
         train_loss, timet, next_step = \
             self.compute_training_loss(tr_data, tr_labels, session)
-
+        if step % 10 == 0:
+            logging.info("step %d --- loss: %0.2f loss_l2_term: %0.2f "
+                         "---- training duration: %f ---- get_data_duration: %f" %(step, train_loss[0],train_loss[1],timet, get_data_duration))
         # Print losses (train + validation)
         if step % self.config.loss_int == 0:
 
             # Validation - Check loss evolution without updating gradients
-            val_loss, timev = self.compute_validation_loss(session)
+            val_loss, timev = self.compute_validation_loss(session, step)
 
             assert not np.isnan(val_loss[0])
             # If loss is Nan, probably something is wrong
@@ -364,18 +384,18 @@ class SiameseNetwork(object):
             self.print_loss(train_loss, step, 'training', timet)
             self.print_loss(val_loss, step, 'validation', timev)
             self.append_losses(step, train_loss, val_loss)
-            self.display_loss(os.path.join(outp, 'loss.png'))
+            # self.display_loss(os.path.join(outp, 'loss.png'))
 
             # Early stop
-            if self.config.early is not None \
-                    and self.track_validation(step, session, saver, outp) is True:
-                logger.warn('Early stopping: Validation loss has not improved' +
-                      ' for {} steps. Last best model has been stored'.format(self.config.early))
-                self.finalize_data()
-                sys.exit()
+            # if self.config.early is not None \
+            #         and self.track_validation(step, session, saver, outp) is True:
+            #     logger.warn('Early stopping: Validation loss has not improved' +
+            #           ' for {} steps. Last best model has been stored'.format(self.config.early))
+            #     self.finalize_data()
+            #     sys.exit()
 
             # Track mean rank from testing
-            self._track_test_rank(session, step, crag=self.crag_path)
+            # self._track_test_rank(session, step, crag=self.crag_path)
 
         # Save state of network for visualization
         if step % self.config.summary_int == 0:
@@ -395,12 +415,19 @@ class SiameseNetwork(object):
         r, l, l2, s = session.run([self.optimizer, self.loss, self.l2, self.step], feed_dict=feed)
         return l, l2, int(s) + 1
 
-    def perform_validation(self, session):
+    def perform_validation(self, session, step=None):
         """Get predictions for the validation set by taking a random subset """
-        valid_instances = self.config.valid_batch - self.DATA_AUGM * self.config.augm
-        data, labels = self.get_validation_data(valid_instances)
+        # valid_instances = self.config.valid_batch - self.DATA_AUGM * self.config.augm
+        logging.info('performing validation, step %i' %step)
+        random_batch = random.randint(self.get_train_size()+self.batch_size, self.dataset_size-self.batch_size)
+        data, labels = self.get_validation_data(random_batch, random_batch+self.batch_size)
         feed = self.build_feed(data, labels, dropout=False, augm=True)
         l = session.run([self.loss, self.l2], feed_dict=feed)
+        sum_str = session.run(self.validation_summaries, feed_dict=feed)
+        if step is not None:
+            self.sum_writer_test.add_summary(sum_str[0], step)
+            self.sum_writer_test.add_summary(sum_str[1], step)
+            self.sum_writer_test.flush()
         return l
 
     def load_alexnet(self, alexnet_path, layers, session):
@@ -416,13 +443,18 @@ class SiameseNetwork(object):
             session.run(ours[pointer][extra].assign(alexnet[k]))
 
     def get_train_size(self):
-        return len(self.train_ind)
+        return int(self.config.dataset_size*self.config.training_perc)
 
     def get_batch_train(self, start, end):
         """ Returns training data in the given interval of indices (last no included] """
-        return self.get_data(self.train_ind[start:end])
+        return self.get_data_slicing(start, end)
 
-    def get_validation_data(self, subset=None):
+    def get_validation_data(self, start, end):
+        """ Returns the validation data according to given size.
+        If size is None, then returns whole set """
+        return self.get_data_slicing(start, end)
+
+    def get_validation_data_old(self, subset=None):
         """ Returns the validation data according to given size.
         If size is None, then returns whole set """
         inds = self.val_ind if subset is None \
@@ -447,10 +479,11 @@ class SiameseNetwork(object):
 
     def get_batch_trainstep(self, step):
         """ Returns a batch from the training data according to the current step"""
+        # offset = (step * self.batch_take) % (self.get_train_size() - self.batch_take)
         offset = (step * self.batch_take) % (self.get_train_size() - self.batch_take)
-        logger.info('%s: step %d (%d-%d) (%d data, %d augmented)'
-               % (dt.datetime.now(), step, offset, offset + self.batch_take - 1,
-                  self.batch_take, self.batch_size - self.batch_take))
+        # logger.info('%s: step %d (%d-%d) (%d data, %d augmented)'
+        #        % (dt.datetime.now(), step, offset, offset + self.batch_take - 1,
+        #           self.batch_take, self.batch_size - self.batch_take))
         return self.get_batch_train(offset, offset + self.batch_take)
 
     ###################################
@@ -550,17 +583,17 @@ class SiameseNetwork(object):
     def build_evaluation_from_crag(self, index):
         """ Returns the data matrix to input into the network corresponding
         to the reference section from the given instance (index) as the
-        first row and the rest are sections connected to the reference one 
+        first row and the rest are sections connected to the reference one
         through an assignmnet node in the CRAG """
 
         def get_image(node):
             """ Given a CRAG slice node, returns the corresponding image """
-            return cu.build_image(node, self.ein, self.ebb, self.metadata['clabels'], 
-                self.metadata['cpositions'], self.imh, self.imw, 
+            return cu.build_image(node, self.ein, self.ebb, self.metadata['clabels'],
+                self.metadata['cpositions'], self.imh, self.imw,
                 self.metadata['data_config']['padding'], self.metadata['data_config']['normalise'])
 
         ref_instance = np.squeeze(self.get_data(index)[0])[1, ...]
-        other = cu.get_connected_slices(self.crag, self.volumes, 
+        other = cu.get_connected_slices(self.crag, self.volumes,
             self.solution, self.ref_ids[index], mode='forward')
         # Build ordered list of slices in the final matrix
         branches = len(self.get_placeholder_suffixes_specific())
@@ -774,24 +807,27 @@ class SiameseNetwork(object):
 
         # Fully connected layers
         fully_offset = len(self.config.cnv_layers)
+        num_ful_con_layers = len(self.config.full_layers)
         for i, l in enumerate(self.config.full_layers):
             with tf.variable_scope('_'.join([self.FULLY_LAB, str(i), prefix])):
                 prev = self.layers_out[fully_offset + i - 1] if i > 0 else flat
                 fullyw = ws[fully_offset + i]
                 self.layers_out.append(nu.define_fully_layer(prev, fullyw[0], fullyw[1],
-                                                             i, prefix, self.pl_dropout))
+                                                             i, prefix, self.pl_dropout,
+                                                             normalize_unit=l.norm_unit,
+                                                             activation=l.activation))
 
         return self.layers_out[-1]
 
     def get_loss(self, outputs, pl_labels):
         """ Returns the loss term """
-        loss_base = self.get_specific_loss(outputs, pl_labels)
+        loss_base, accuracy = self.get_specific_loss(outputs, pl_labels, return_accuracy=True)
         final_loss = tf.identity(loss_base)
 
         if self.config.l2_reg > 0:
             # If L2 regularization enabled, sum over all parameters
             # and add them to the general loss term
-            # TODO: we may also consider the batch normalization parameters, if 
+            # TODO: we may also consider the batch normalization parameters, if
             # requested
             ws = self._define_weights()
             with tf.variable_scope('l2_term'):
@@ -812,7 +848,16 @@ class SiameseNetwork(object):
         else:
             l2_term = tf.constant(0)
 
+        val_loss = tf.scalar_summary('loss_base_validation', loss_base)
+        accuracy_str = tf.scalar_summary('accuracy_validation', accuracy)
+
+        self.validation_summaries = [val_loss, accuracy_str]
         return final_loss, l2_term
+
+    # str1 = tf.scalar_summary('gameswinning_train', winning_games_op_last)
+    # str2 = tf.scalar_summary('gamesgotlost_train', got_lost_op_last)
+    # str3 = tf.scalar_summary('gamessteppedoutside_train', stepped_outside_op_last)
+    # str4 = tf.scalar_summary('collectedreward_train', collected_reward_op)
 
     def get_output(self):
         """" Returns the output layers of the networks for each branch """
@@ -842,6 +887,13 @@ class SiameseNetwork(object):
         mask = nu.boolean_mask(inds, self.data['data'].shape[0])
         data = nu.reshape_data(self.data['data'][mask, ...][:])
         return data, self.get_label_batch(mask)
+
+    def get_data_slicing(self, start, end):
+        """Returns data and labels via matrix slicing"""
+        data = nu.reshape_data(self.data['data'][start:end, ...])
+        return data, self.get_label_batch([True]*self.data['data'].shape[0])
+
+
 
     def configure_sess(self):
         """ Configures Tensorflow session """
@@ -999,28 +1051,38 @@ class TripletSiamese(SiameseNetwork):
     def get_placeholder_suffixes_specific(self):
         return ['left', 'center', 'right']
 
-    def get_specific_loss(self, outputs, labels):
-        return self._triplet_loss(outputs[0], outputs[1], outputs[2])
+    def get_specific_loss(self, outputs, labels, return_accuracy=False):
+        return self._triplet_loss(outputs[0], outputs[1], outputs[2], return_accuracy=return_accuracy)
 
-    def _triplet_loss(self, f1, f2, f3, alpha=1):
+    def _triplet_loss(self, f1, f2, f3, alpha=1, return_accuracy=False):
         """ Loss for a evaluation of a pair of (non)-corresponding slices
             Triplet loss L:
                 L= 0.5 * max(0, d(f1, f2) - d(f1, f3) + alpha)
             Where alpha is usually 1
+            If d(f1, f2) == d(f1, f3):
+                L = 0.5
         """
         # Distances negative and positive
         dist_pos = nu.euclidean_dist(f1, f2)
         dist_neg = nu.euclidean_dist(f1, f3)
 
-        # Get maximum 
+        # Get maximum
         subs = tf.sub(dist_pos, dist_neg)
         add_const = tf.cast(tf.fill(tf.pack([tf.shape(subs)[0]]), alpha), subs.dtype)
         added = tf.add(subs, add_const)
         loss = tf.maximum(tf.zeros(tf.shape(added), added.dtype), added)
-
         # Multiply by 1/2
         const = tf.fill(tf.pack([tf.shape(loss)[0]]), 0.5)
-        return tf.reduce_mean(tf.mul(loss, const))
+        loss = tf.mul(loss, const)
+        # Get accuracy independent of margin (as soon as d_pos is smaller as d_neg) it is count as correct
+        bool_vector = loss < 0.5*alpha
+        num_of_correct = tf.reduce_sum(tf.cast(bool_vector, tf.float32))
+        cor_all = tf.div(num_of_correct, tf.cast(tf.shape(subs)[0], tf.float32))
+
+        if return_accuracy:
+            return tf.reduce_mean(loss), cor_all
+        else:
+            return tf.reduce_mean(loss)
 
     def get_positive_instances(self, inds):
         return inds # All include a positive match in triplets
