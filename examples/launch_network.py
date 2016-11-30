@@ -2,6 +2,9 @@
 
 from neuralimg.training import siamese as si
 import os
+import sys
+from ml_utils import machine_learning_utils as ml
+
 
 """ Launches a Triplet Siamese network using the given data and stores the model and the logs of the network
 so they can be further visualized. More precisely, it stores:
@@ -26,14 +29,25 @@ so they can be further visualized. More precisely, it stores:
 
                 ssh -NL localhost:6007:localhost:6006 user@server
 """
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+dataset = '/raid/julia/projects/fragment_embedding/dani_crag/dataA.h5'
+models = '/raid/julia/projects/fragment_embedding/nn_training/models'
 
-dataset = '/DataDisk/morad/out/triplet.h5'
-models = 'models'
-logs = 'logs'
-crag_path = '/DataDisk/morad/out/project/hdf/training_dataset.h5'
+# logs = 'logs'
+# logs = '/raid/julia/projects/fragment_embedding/nn_training/logs'
+base_dir_session = '/raid/julia/projects/fragment_embedding/nn_training/'
+session_dir, tensorboard_dir = ml.folder_structure_for_tensorflow(base_dir_session)
+
+os.mkdir(tensorboard_dir + '/test')
+os.mkdir(tensorboard_dir + '/train')
+
+print tensorboard_dir
+crag_path = '/raid/julia/projects/fragment_embedding/dani_crag/dataA.h5'
+crag_path = None
 
 siamese = si.TripletSiamese(dataset, crag_path)
-conf_path = '../training/config/network.conf'
+conf_path = '/raid/julia/projects/fragment_embedding/nn_training/configs/config.conf'
+
 #conf_path = None
-siamese.train(models, logs, conf_path, retrain=True)
+siamese.train(tensorboard_dir, tensorboard_dir, conf_path, retrain=False)
 
