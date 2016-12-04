@@ -137,6 +137,7 @@ class DatasetGen(object):
 
         for i, instance in enumerate(total):
 
+            # Slices contain [anchor, positive, negative]
             slices, ref_id = instance[0]
 
             if not self._is_instance_excluded(slices, current_crag.init,
@@ -253,6 +254,7 @@ class DatasetGen(object):
         imh, imw = self.buf.shape[3], self.buf.shape[4]
         clabels = list(self.channel_map.keys())
         cpositions = list(self.channel_map.values())
+
 
         # Insert data buffer information
         for i in range(len(slices)):

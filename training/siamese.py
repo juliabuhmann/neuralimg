@@ -3,7 +3,8 @@
 try:
     from neuralimg.crag import crag_utils as cu
 except ImportError:
-    print 'crag not installed'
+    # print('crag not installed')
+    print('test')
 from neuralimg.training import net_utils as nu
 from neuralimg import dataio
 
@@ -162,9 +163,9 @@ class SiameseNetwork(object):
         self.imgs, _, self.depth, self.imh, self.imw = size
 
         # Read indices
-        self.train_ind = f['indices']['training'][:]
-        self.val_ind = f['indices']['validation'][:]
-        self.test_ind = f['indices']['testing'][:]
+        # self.train_ind = f['indices']['training'][:]
+        # self.val_ind = f['indices']['validation'][:]
+        # self.test_ind = f['indices']['testing'][:]
 
         # Read references
         self.ref_ids = f['ref_ids'][:]
@@ -270,7 +271,7 @@ class SiameseNetwork(object):
          and performs a training step """
         start_time = time.time()
         lt, lt2, next_step = \
-            self.perform_training(tr_data, tr_labels, session)
+            self.perform_training(tr_data, tr_labels, session, backprop=True)
         duration = time.time() - start_time
         return [lt, lt2], duration, next_step
 
@@ -308,6 +309,7 @@ class SiameseNetwork(object):
 
         if nu.exists_conf(outp):
             # Load configuration from stored model
+            logging.info('loading config file from %s' %outp)
             self.check_options(nu.load_configuration(outp))
         else:
             if config_path is None:
@@ -344,6 +346,7 @@ class SiameseNetwork(object):
             # Prepare summaries for Tensorboard visualization
             # session.graph_def gives a deprecated warning but is needed in version 0.8.0
             self.summary_op = tf.merge_all_summaries()
+            logging.info('tensorboard logs written to %s' %logs)
             self.sum_writer = tf.train.SummaryWriter(logs + 'train', session.graph_def)
             self.sum_writer_test = tf.train.SummaryWriter(logs + 'test')
 
@@ -353,6 +356,7 @@ class SiameseNetwork(object):
             while step <= self.config.steps:
                 s = self.training_step(session, step, saver, outp)
                 step = s
+                # step += 1
 
             logger.info('Storing final model ...')
             self.store_net_state(session, saver, step, outp, 'final')
@@ -368,14 +372,19 @@ class SiameseNetwork(object):
         # Training data - Update gradients
         train_loss, timet, next_step = \
             self.compute_training_loss(tr_data, tr_labels, session)
+
+
         if step % 10 == 0:
             logging.info("step %d --- loss: %0.2f loss_l2_term: %0.2f "
                          "---- training duration: %f ---- get_data_duration: %f" %(step, train_loss[0],train_loss[1],timet, get_data_duration))
+            # logging.info("mean rank %0.2f" %self.mean_rank[-1][1])
         # Print losses (train + validation)
-        if step % self.config.loss_int == 0:
-
+        if step % self.config.loss_int == 0 or step == 1:
             # Validation - Check loss evolution without updating gradients
             val_loss, timev = self.compute_validation_loss(session, step)
+            self.store_summary(tr_data, tr_labels, step, session, store_only_validation=True)
+            self.sum_writer.flush()
+
 
             assert not np.isnan(val_loss[0])
             # If loss is Nan, probably something is wrong
@@ -398,6 +407,7 @@ class SiameseNetwork(object):
             # self._track_test_rank(session, step, crag=self.crag_path)
 
         # Save state of network for visualization
+        # if step % self.config.summary_int == 0 or step == 1:
         if step % self.config.summary_int == 0:
             logger.info('Storing summary ...')
             self.store_summary(tr_data, tr_labels, step, session)
@@ -409,10 +419,15 @@ class SiameseNetwork(object):
 
         return next_step
 
-    def perform_training(self, batch_data, batch_labels, session):
+    def perform_training(self, batch_data, batch_labels, session, backprop=True):
         """ Trains the network with the input batch and returns the loss """
         feed = self.build_feed(batch_data, batch_labels, dropout=True, augm=True)
-        r, l, l2, s = session.run([self.optimizer, self.loss, self.l2, self.step], feed_dict=feed)
+        if backprop:
+            r, l, l2, s = session.run([self.optimizer, self.loss, self.l2, self.step], feed_dict=feed)
+        else:
+            l, l2, s = session.run([self.loss, self.l2, self.step], feed_dict=feed)
+
+
         return l, l2, int(s) + 1
 
     def perform_validation(self, session, step=None):
@@ -420,8 +435,8 @@ class SiameseNetwork(object):
         # valid_instances = self.config.valid_batch - self.DATA_AUGM * self.config.augm
         logging.info('performing validation, step %i' %step)
         random_batch = random.randint(self.get_train_size()+self.batch_size, self.dataset_size-self.batch_size)
-        data, labels = self.get_validation_data(random_batch, random_batch+self.batch_size)
-        feed = self.build_feed(data, labels, dropout=False, augm=True)
+        data, labels = self.get_validation_data(random_batch, random_batch+self.batch_size+4)
+        feed = self.build_feed(data, labels, dropout=False, augm=False)
         l = session.run([self.loss, self.l2], feed_dict=feed)
         sum_str = session.run(self.validation_summaries, feed_dict=feed)
         if step is not None:
@@ -746,6 +761,7 @@ class SiameseNetwork(object):
                     #sgd = tf.train.AdamOptimizer(self.config.lr)
                     sgd = tf.train.AdagradOptimizer(self.config.lr)
                     self.optimizer = sgd.minimize(self.loss, global_step=self.step)
+
                     tf.scalar_summary('loss', self.loss)
 
                 # Define summaries for all variables
@@ -983,11 +999,18 @@ class SiameseNetwork(object):
         nu.dump_losses(self.train_loss, self.val_loss, os.path.join(outp, 'loss.dat'))
         nu.dump_rank(self.mean_rank, os.path.join(outp, 'ranks.dat'))
 
-    def store_summary(self, batch_data, batch_labels, step, session):
+    def store_summary(self, batch_data, batch_labels, step, session, store_only_validation=False):
         """ Stores a summary of the measures taken in the graph """
         feed = self.build_feed(batch_data, batch_labels)
-        summary_str = session.run(self.summary_op, feed_dict=feed)
-        self.sum_writer.add_summary(summary_str, step)
+
+        if store_only_validation:
+            sum_str = session.run(self.validation_summaries, feed_dict=feed)
+            for sum_single in sum_str:
+                self.sum_writer.add_summary(sum_single, step)
+            self.sum_writer_test.flush()
+        else:
+            summary_str = session.run(self.summary_op, feed_dict=feed)
+            self.sum_writer.add_summary(summary_str, step)
 
 
 class PairedSiamese(SiameseNetwork):

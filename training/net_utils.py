@@ -116,7 +116,7 @@ def define_fully_layer(data, w, b, i, prefix, dropout, normalize_unit=False, act
     if activation:
         relu = tf.nn.relu(relu, name=prefix + '-relufc' + str(i))
     else:
-        print 'no activation is added to fully connected layer'
+        print('no activation is added to fully connected layer')
 
     if normalize_unit:
         relu = tf.contrib.layers.layers.unit_norm(relu, 1)

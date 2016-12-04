@@ -7,12 +7,16 @@ from neuralimg.image import datasets as dd
 """ Extracts triplet datasets for each section of the CREMI data """
 
 # Gather crag paths
-crag_sampleA = '/DataDisk/morad/all/sample_A/training_dataset.h5'
-crag_sampleB = '/DataDisk/morad/all/sample_B/training_dataset.h5'
-crag_sampleC = '/DataDisk/morad/all/sample_C/training_dataset.h5'
-crags = [crag_sampleA, crag_sampleB, crag_sampleC]
-names = ['sampleA', 'sampleB', 'sampleC']
+# crag_sampleA = '/DataDisk/morad/all/sample_A/training_dataset.h5'
+crag_sampleA = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/sampleA_woFeatures.hdf'
+# crag_sampleB = '/DataDisk/morad/all/sample_B/training_dataset.h5'
+# crag_sampleC = '/DataDisk/morad/all/sample_C/training_dataset.h5'
+# crags = [crag_sampleA, crag_sampleB, crag_sampleC]
+# names = ['sampleA', 'sampleB', 'sampleC']
 
+
+crags = [crag_sampleA]
+names = ['sampleA']
 
 # Some membrane prediction sections are really poor due to noise. It is best to 
 # ignore them during the data creation to avoid bad quality data
@@ -23,7 +27,9 @@ excluded = [
         [14,74,86]  # Sample C
 ]
 
-root_output = '/DataDisk/morad/all/datasets'    # Destination root output
+# root_output = '/DataDisk/morad/all/datasets'    # Destination root output
+# root_output = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets/'
+root_output = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/'
 create_dir(root_output)
 data_config = 'data/confs/data.conf'    # Change data settings according to needs
 

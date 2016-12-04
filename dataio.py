@@ -7,7 +7,7 @@ import os
 import glob
 import h5py
 import pickle
-import pylab as plt
+# import pylab as plt
 
 
 class DatasetReader(object):

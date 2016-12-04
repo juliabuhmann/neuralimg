@@ -28,6 +28,7 @@ def generate_merge_histories(sps, mem, hists):
 if __name__ == '__main__':
 
     root_output = '/DataDisk/morad/all'
+    root_output = '/raid/julia/projects/fragment_embedding/dani_crag/crag_output/'
     create_dir(root_output)
 
     # Parameters per sample
@@ -43,20 +44,22 @@ if __name__ == '__main__':
     # pr.join_small()
     # that erases noisy regions (specially in sample A)
     pathsA = {
-            'raw': 'data/crag/raw',
-            'gt': 'data/crag/gt',
-            'mem': 'data/crag/mem' }
-    pathsB = {
-            'raw': 'data/crag/raw',
-            'gt': 'data/crag/gt',
-            'mem': 'data/crag/mem' }
-    pathsC = {
-            'raw': 'data/crag/raw',
-            'gt': 'data/crag/gt',
-            'mem': 'data/crag/mem' }
+            'raw': '/raid/julia/projects/fragment_embedding/vanessa_crag/training/rawA',
+            'gt': '/raid/julia/projects/fragment_embedding/vanessa_crag/training/groundtruthA',
+            'mem': '/raid/julia/projects/fragment_embedding/vanessa_crag/training/membraneA'}
+    # pathsB = {
+    #         'raw': 'data/crag/raw',
+    #         'gt': 'data/crag/gt',
+    #         'mem': 'data/crag/mem' }
+    # pathsC = {
+    #         'raw': 'data/crag/raw',
+    #         'gt': 'data/crag/gt',
+    #         'mem': 'data/crag/mem' }
 
-    params = [paramsA, paramsB, paramsC]
-    paths = [pathsA, pathsB, pathsC]
+    # params = [paramsA, paramsB, paramsC]
+    # paths = [pathsA, pathsB, pathsC]
+    params = [paramsA]
+    paths = [pathsA]
 
     # Iterate through samples
     for (par, pat) in zip(params, paths):

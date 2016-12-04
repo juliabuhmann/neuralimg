@@ -29,9 +29,13 @@ so they can be further visualized. More precisely, it stores:
 
                 ssh -NL localhost:6007:localhost:6006 user@server
 """
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
-dataset = '/raid/julia/projects/fragment_embedding/dani_crag/dataA.h5'
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+# dataset = '/raid/julia/projects/fragment_embedding/dani_crag/dataA.h5'
+# dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets/sampleA.h5'
+# dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/sampleA.h5'
+dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/sampleA_backup.h5'
 models = '/raid/julia/projects/fragment_embedding/nn_training/models'
+
 
 # logs = 'logs'
 # logs = '/raid/julia/projects/fragment_embedding/nn_training/logs'
@@ -41,13 +45,18 @@ session_dir, tensorboard_dir = ml.folder_structure_for_tensorflow(base_dir_sessi
 os.mkdir(tensorboard_dir + '/test')
 os.mkdir(tensorboard_dir + '/train')
 
-print tensorboard_dir
-crag_path = '/raid/julia/projects/fragment_embedding/dani_crag/dataA.h5'
+print(tensorboard_dir)
+# crag_path = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/sampleA_woFeatures.hdf'
 crag_path = None
+retrain = False
+
+if retrain:
+    tensorboard_dir = '/raid/julia/projects/fragment_embedding/nn_training/toy_model/'
+
 
 siamese = si.TripletSiamese(dataset, crag_path)
 conf_path = '/raid/julia/projects/fragment_embedding/nn_training/configs/config.conf'
 
 #conf_path = None
-siamese.train(tensorboard_dir, tensorboard_dir, conf_path, retrain=False)
+siamese.train(tensorboard_dir, tensorboard_dir, conf_path, retrain=retrain)
 
