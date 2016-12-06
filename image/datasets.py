@@ -378,6 +378,8 @@ class TripletDataGen(DatasetGen):
 
         # Read assignment nodes
         instances = []
+        rank_collection = []
+        pos_was_not_included = 0
         for n in crag.nodes():
             if crag.type(n) == CragNodeType.AssignmentNode:
 
@@ -388,21 +390,58 @@ class TripletDataGen(DatasetGen):
                     slice1, slice2 = cu.get_slices(volumes, [n1, n2])
                     neg_n1 = cu.get_nassigned_nodes(crag, volumes, solution, n1)
 
+                    ref_center = get_center(slice1)
+                    dist_of_pos = np.sqrt(sum((ref_center-get_center(slice2))**2))
+
                     # Build instance only if a negative assignment for first has 
                     # been found. Among all, choose closets in space
+                    # print neg_n1, 'neg_n1'
                     if len(neg_n1) > 0:
-                        third = get_closest(slice1, neg_n1)
+                        third, dists = get_closest(slice1, neg_n1, return_dists=True)
+                        neg_dist = np.sqrt(sum((ref_center-get_center(third))**2))
                         instances.append([[slice1, slice2, third], crag.id(n1)])
+                        # print self.conf.rank
+                        if self.conf.rank > 1:
+                            indeces = sorted(range(len(dists)), key=lambda x: dists[x])
+                            assert indeces[0] == dists.index(min(dists))
+                            assert indeces[0] == dists.index(neg_dist)
 
+                            number_of_nodes_to_comp = min(self.conf.rank, len(neg_n1))
+                            for rank in range(1, number_of_nodes_to_comp):
+
+                                third = neg_n1[indeces[rank]]
+                                instances.append([[slice1, slice2, third], crag.id(n1)])
+
+                        dists = sorted(dists)
+
+                        was_inside = False
+                        rank = None
+                        for ii, neg_dist in enumerate(dists):
+                            if dist_of_pos <= neg_dist:
+                                was_inside = True
+                                rank = ii
+                                break
+                        if was_inside:
+                            rank_collection.append(rank)
+                        else:
+                            pos_was_not_included += 1
+
+        print('mean rank', np.mean(rank_collection), 'average not included',
+              pos_was_not_included / float((len(rank_collection) + pos_was_not_included)))
+        print('in %0.3f percent was amongst top 3' %(np.sum(np.array(rank_collection)<3)/float(len(rank_collection))))
+        print('in %0.3f percent was amongst top 5' %(np.sum(np.array(rank_collection)<5)/float(len(rank_collection))))
         # Add label, though it is not used
         return zip(instances, )
 
 
-def get_closest(ref, others):
+def get_closest(ref, others, return_dists=False):
     """ Retrieves node closests to the reference node according to L2 distance"""
     ref_center = get_center(ref)
     dists = [np.sqrt(sum((ref_center-get_center(i))**2)) for i in others]
-    return others[dists.index(min(dists))]
+    if return_dists:
+        return others[dists.index(min(dists))], dists
+    else:
+        return others[dists.index(min(dists))]
 
 
 def balance_classes(positive, negative):

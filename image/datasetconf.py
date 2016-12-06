@@ -64,6 +64,7 @@ class DatasetGenConf(object):
         self.mode = config[self.sc].get('mode')
         self.ratioT = config[self.sc].getfloat('ratioT')
         self.ratioV = config[self.sc].getfloat('ratioV')
+        self.rank = config[self.sc].getint('rank')
 
         # Check arguments
         if self.width < 0 or self.height < 0:

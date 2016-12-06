@@ -10,7 +10,10 @@ import shutil
 import tempfile
 
 import neuralimg.dataio as dataio
-from neuralimg.image import preproc as pr
+try:
+    from neuralimg.image import preproc as pr
+except ImportError:
+    print('prepriocessing modele not loaded')
 
 from pycmc import *
 

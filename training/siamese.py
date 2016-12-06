@@ -64,7 +64,7 @@ class SiameseNetwork(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, path=None, crag_path=None):
+    def __init__(self, path=None, crag_path=None, traindataname=None, testdataname=None):
         """ Initializes a SiameseNetwork
             :param path: Path to HDF5 dataset. In case model needs to be loaded
                 and test data to be provided, can be set to None
@@ -89,6 +89,7 @@ class SiameseNetwork(object):
         self.imgs, self.depth, self.imh, self.imw = [None] * 4
         # Placeholders variables
         self.pls, self.pl_names, self.pl_labels, self.pl_dropout = [None] * 4
+        self.dist_pos, self.dist_neg = None, None # Tensorflow operation to obtain positive and negative distances
         # Steps accounts for training step only
         self.step, self.pl_aug = None, None
         self.layers_out = []
@@ -96,6 +97,10 @@ class SiameseNetwork(object):
         self.metadata = {}
         # Test attributes
         self.test_session = None
+
+        # HDF5 group names
+        self.traindataname, self.testdataname = traindataname, testdataname
+
 
         if self.data_path is not None:
             logger.info('Reading data ...')
@@ -153,7 +158,10 @@ class SiameseNetwork(object):
         """ Reads the data characteristics from the dataset provided  """
         # Open data to read some stats
         f = h5py.File(self.data_path, 'r')
-        size = f['data'].shape[:]
+        if self.traindataname is None:
+            size = f['data'].shape[:]
+        else:
+            size = f[self.traindataname].shape[:]
 
         # Read dimensions
         if len(size) != 5:
@@ -340,7 +348,7 @@ class SiameseNetwork(object):
                 self.load_net_state(outp, saver, session, model_file=check_path)
 
             # Get initial step
-            init_step = self.get_step(session) + 1
+            init_step = self.get_step(session)
             logger.info('Initial step is {}'.format(init_step))
 
             # Prepare summaries for Tensorboard visualization
@@ -373,7 +381,6 @@ class SiameseNetwork(object):
         train_loss, timet, next_step = \
             self.compute_training_loss(tr_data, tr_labels, session)
 
-
         if step % 10 == 0:
             logging.info("step %d --- loss: %0.2f loss_l2_term: %0.2f "
                          "---- training duration: %f ---- get_data_duration: %f" %(step, train_loss[0],train_loss[1],timet, get_data_duration))
@@ -404,7 +411,7 @@ class SiameseNetwork(object):
             #     sys.exit()
 
             # Track mean rank from testing
-            # self._track_test_rank(session, step, crag=self.crag_path)
+            self._track_test_rank(session, step, crag=self.crag_path)
 
         # Save state of network for visualization
         # if step % self.config.summary_int == 0 or step == 1:
@@ -434,8 +441,11 @@ class SiameseNetwork(object):
         """Get predictions for the validation set by taking a random subset """
         # valid_instances = self.config.valid_batch - self.DATA_AUGM * self.config.augm
         logging.info('performing validation, step %i' %step)
-        random_batch = random.randint(self.get_train_size()+self.batch_size, self.dataset_size-self.batch_size)
-        data, labels = self.get_validation_data(random_batch, random_batch+self.batch_size+4)
+        if self.testdataname is None:
+            random_batch = random.randint(self.get_train_size()+self.batch_size, self.dataset_size-self.batch_size)
+        else:
+            random_batch = random.randint(0, self.data[self.testdataname].shape[0] - self.batch_size)
+        data, labels = self.get_validation_data(random_batch, random_batch+self.batch_size)
         feed = self.build_feed(data, labels, dropout=False, augm=False)
         l = session.run([self.loss, self.l2], feed_dict=feed)
         sum_str = session.run(self.validation_summaries, feed_dict=feed)
@@ -458,16 +468,19 @@ class SiameseNetwork(object):
             session.run(ours[pointer][extra].assign(alexnet[k]))
 
     def get_train_size(self):
-        return int(self.config.dataset_size*self.config.training_perc)
+        if self.traindataname is None:
+            return int(self.config.dataset_size*self.config.training_perc)
+        else:
+            return self.data[self.traindataname].shape[0]
 
     def get_batch_train(self, start, end):
         """ Returns training data in the given interval of indices (last no included] """
-        return self.get_data_slicing(start, end)
+        return self.get_data_slicing(start, end, datasetname=self.traindataname)
 
     def get_validation_data(self, start, end):
         """ Returns the validation data according to given size.
         If size is None, then returns whole set """
-        return self.get_data_slicing(start, end)
+        return self.get_data_slicing(start, end, datasetname=self.testdataname)
 
     def get_validation_data_old(self, subset=None):
         """ Returns the validation data according to given size.
@@ -496,9 +509,10 @@ class SiameseNetwork(object):
         """ Returns a batch from the training data according to the current step"""
         # offset = (step * self.batch_take) % (self.get_train_size() - self.batch_take)
         offset = (step * self.batch_take) % (self.get_train_size() - self.batch_take)
-        # logger.info('%s: step %d (%d-%d) (%d data, %d augmented)'
-        #        % (dt.datetime.now(), step, offset, offset + self.batch_take - 1,
-        #           self.batch_take, self.batch_size - self.batch_take))
+        if step % 100 == 0 or step == 1:
+            logger.info('%s: step %d (%d-%d) (%d data, %d augmented)'
+                   % (dt.datetime.now(), step, offset, offset + self.batch_take - 1,
+                      self.batch_take, self.batch_size - self.batch_take))
         return self.get_batch_train(offset, offset + self.batch_take)
 
     ###################################
@@ -558,7 +572,7 @@ class SiameseNetwork(object):
         Parameters
         ----------
         data: ndarray
-            Descriptor data
+            Descriptor data, required shape: (?, #Channels, Height, Width), eg. (?, 3, 128, 128)
         labels: ndarray
             Labels from data. If network does not require labels (triplet)
             set to None
@@ -900,14 +914,21 @@ class SiameseNetwork(object):
 
     def get_data(self, inds):
         """ Returns data and labels from the given indices """
-        mask = nu.boolean_mask(inds, self.data['data'].shape[0])
-        data = nu.reshape_data(self.data['data'][mask, ...][:])
+        if self.traindataname is None:
+            datasetname = 'data'
+        else:
+            datasetname = self.traindataname
+        mask = nu.boolean_mask(inds, self.data[datasetname].shape[0])
+        data = nu.reshape_data(self.data[datasetname][mask, ...][:])
         return data, self.get_label_batch(mask)
 
-    def get_data_slicing(self, start, end):
+    def get_data_slicing(self, start, end, datasetname=None):
         """Returns data and labels via matrix slicing"""
-        data = nu.reshape_data(self.data['data'][start:end, ...])
-        return data, self.get_label_batch([True]*self.data['data'].shape[0])
+        if datasetname is None:
+            datasetname = 'data'
+        # Cannels are moved to the last axis.
+        data = nu.reshape_data(self.data[datasetname][start:end, ...])
+        return data, self.get_label_batch([True]*self.data[datasetname].shape[0])
 
 
 
@@ -1088,6 +1109,9 @@ class TripletSiamese(SiameseNetwork):
         # Distances negative and positive
         dist_pos = nu.euclidean_dist(f1, f2)
         dist_neg = nu.euclidean_dist(f1, f3)
+
+        self.dist_pos = dist_pos
+        self.dist_neg = dist_neg
 
         # Get maximum
         subs = tf.sub(dist_pos, dist_neg)

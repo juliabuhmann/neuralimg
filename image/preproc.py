@@ -2,7 +2,10 @@
 
 from scipy import ndimage as ndi
 from skimage.segmentation import relabel_sequential
-import cv2
+try:
+    import cv2
+except ImportError:
+    print 'Open CV not installed or not found'
 
 from scipy.sparse import lil_matrix
 

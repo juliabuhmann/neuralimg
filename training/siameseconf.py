@@ -149,6 +149,7 @@ class NetworkConf(object):
         self.dataset_size = config[self.p_sec].getint('dataset_size')
 
 
+
         self._read_conv_layers(config)
         self._read_fullyc_layers(config)
 

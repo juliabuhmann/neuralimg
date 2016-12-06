@@ -33,7 +33,8 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 # dataset = '/raid/julia/projects/fragment_embedding/dani_crag/dataA.h5'
 # dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets/sampleA.h5'
 # dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/sampleA.h5'
-dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/sampleA_backup.h5'
+# dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/sampleA_backup.h5'
+dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/dummy2.h5'
 models = '/raid/julia/projects/fragment_embedding/nn_training/models'
 
 
@@ -47,6 +48,7 @@ os.mkdir(tensorboard_dir + '/train')
 
 print(tensorboard_dir)
 # crag_path = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/sampleA_woFeatures.hdf'
+crag_path = ''
 crag_path = None
 retrain = False
 
@@ -54,7 +56,7 @@ if retrain:
     tensorboard_dir = '/raid/julia/projects/fragment_embedding/nn_training/toy_model/'
 
 
-siamese = si.TripletSiamese(dataset, crag_path)
+siamese = si.TripletSiamese(dataset, crag_path, traindataname='train', testdataname='test')
 conf_path = '/raid/julia/projects/fragment_embedding/nn_training/configs/config.conf'
 
 #conf_path = None

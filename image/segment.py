@@ -3,7 +3,12 @@
 import mahotas as mh
 import numpy as np
 from scipy import ndimage as ndi
-import cv2
+try:
+    import cv2
+    check_cv2 = True
+except ImportError:
+    print 'Open CV not installed or not found'
+    check_cv2 = False
 
 import abc
 import sys
@@ -12,10 +17,11 @@ from skimage.segmentation import felzenszwalb, slic, random_walker, quickshift
 from skimage.util import img_as_float
 
 v = sys.version_info
-if v[0] < 3:
-    CV_DIST = cv2.cv.CV_DIST_L2
-else:
-    CV_DIST = cv2.DIST_L2
+if check_cv2:
+    if v[0] < 3:
+        CV_DIST = cv2.cv.CV_DIST_L2
+    else:
+        CV_DIST = cv2.DIST_L2
 
 
 """ Class containing different image segmentation methods """

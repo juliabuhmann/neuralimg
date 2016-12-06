@@ -15,15 +15,14 @@ from neuralimg.crag import crag_utils as cu
 
 from pycmc import *
 
+import time
 
 """ Class to update CRAGs with hyperparameters and trained models """
-
 
 OUTLIER_VALUE = 10.0
 
 
 class CragCostManager(object):
-
     def __init__(self, path):
         """ Reads essential data from the CRAG for cost update """
         # Read node features, edge features and feature weights
@@ -94,7 +93,7 @@ class CragCostManager(object):
 
         if feature_size is not None and weights is not None:
             raise ValueError('Feature size and weight list cannot be not None' +
-                ' at the same time. Input either of them')
+                             ' at the same time. Input either of them')
 
         # Update assignment node
         self.fw.__setitem__(CragNodeType.AssignmentNode, [merge_score])
@@ -103,8 +102,8 @@ class CragCostManager(object):
         weights = weights if weights is not None else [1] * feature_size
         if len(weights) != real_feature_size:
             print('Warning: Assigning a feature weight vector different from the ' +
-                ' size of the feature size of the slice nodes. This will only ' + 
-                ' work if slice node features are modified before saving ')
+                  ' size of the feature size of the slice nodes. This will only ' +
+                  ' work if slice node features are modified before saving ')
         # Update slice node
         self.fw.__setitem__(CragNodeType.SliceNode, weights)
 
@@ -142,10 +141,14 @@ class CragCostManager(object):
         # We iterate over slice nodes and use those assignment nodes
         # for the next section. Note that we are computing redundant data
         # as a node can appear first and then appear as connected to another one
+        end_crop, inference_time, number_of_partners = 1, 1, 1
         for i, current in enumerate(self.nodes):
 
-            if i % 100 == 0:
-                print('Processing node %d' % i)
+            if i % 10 == 0:
+                print('Processing node %d/%d' % (i, len(self.nodes)))
+                print('getting data took %0.3f, %0.3f per node and inference %0.3f, %0.3f, number of partners %d' % (
+                    end_crop, end_crop / float(number_of_partners), inference_time,
+                    inference_time / float(number_of_partners), number_of_partners))
 
             # Care only about the slice nodes here
             if self.crag.type(current) != CragNodeType.SliceNode:
@@ -168,9 +171,14 @@ class CragCostManager(object):
 
             # Get slice images and compute descriptors
             slices = [current] + [j[0] for j in nodes]
+            number_of_partners = len(slices)
+            start_crop = time.time()
             slice_imgs = self._get_images(slices, imh, imw, pad, norm, names, pos)
             batch = _build_input_from_slices(slice_imgs, names, imh, imw)
+            end_crop = time.time() - start_crop
+            inf_start = time.time()
             desc = net.get_descriptors(batch)
+            inference_time = time.time() - inf_start
 
             # Assign descriptor for each slice
             for i in range(len(slices)):
@@ -219,9 +227,9 @@ class CragCostManager(object):
                 feat_len = self._item_length(set_manager, i)
                 weight_len = self._item_length(self.fw, self.crag.type(i))
                 if feat_len != weight_len:
-                    raise RuntimeError('Incompatible feature(' + str(feat_len) + ') and weight(' + 
-                        str(weight_len) + ') for ' + elem_name + ' ' + str(self.crag.id(i)) +
-                        ' of type ' + str(self.crag.type(i)))
+                    raise RuntimeError('Incompatible feature(' + str(feat_len) + ') and weight(' +
+                                       str(weight_len) + ') for ' + elem_name + ' ' + str(self.crag.id(i)) +
+                                       ' of type ' + str(self.crag.type(i)))
 
         _validate_set(self.crag.nodes(), self.nf, 'node')
         _validate_set(self.crag.edges(), self.ef, 'edge')
@@ -265,7 +273,6 @@ def _get_ratios(ref_desc, other_desc, outlier_ratio):
         if l2_dists[i] > out_edge:
             ratios[i] = outlier_ratio
         else:
-            ratios[i] = float(l2_dists[i]/maxim)
+            ratios[i] = float(l2_dists[i] / maxim)
     # print('Ratios: {}'.format(ratios))
-    return ratios 
-
+    return ratios

@@ -307,13 +307,13 @@ class CragGenerator(object):
             "-p", self.project_file, 
             "--exportSolution=" + str(outp),
             "--numIterations=" + str(iterations), 
-            "--readOnly",
-            "--numThreads=" + str(threads)
-        ]
+            "--readOnly"]
+            # "--numThreads=" + str(threads)
+        # ]
 
         logs = None if logs is None else os.path.join(logs, 'solve.log')
         p = Process(args, logs)
-        p.execute()
+        p.execute(verbose=True)
 
         self.solution = outp
 
