@@ -150,7 +150,7 @@ class SiameseNetwork(object):
         if self.config.dataset_size is not None:
             self.dataset_size = self.config.dataset_size
 
-        logging.info('total dataset size: %i, trainingset size: %i' %(self.dataset_size, self.get_train_size()))
+        # logging.info('total dataset size: %i, trainingset size: %i' %(self.dataset_size, self.get_train_size()))
 
 
 
@@ -411,7 +411,7 @@ class SiameseNetwork(object):
             #     sys.exit()
 
             # Track mean rank from testing
-            self._track_test_rank(session, step, crag=self.crag_path)
+            # self._track_test_rank(session, step, crag=self.crag_path)
 
         # Save state of network for visualization
         # if step % self.config.summary_int == 0 or step == 1:

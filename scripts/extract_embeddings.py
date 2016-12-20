@@ -13,11 +13,11 @@ from pycmc import *
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-# crag_path = '/raid/julia/documents/Dropbox/best_effort/heuristic_100sections/sampleA.hdf'
-crag_path = '/raid/julia/documents/Dropbox/best_effort/heuristic_25sections/sampleA_bestEffort.hdf'
+crag_path = '/raid/julia/documents/Dropbox/best_effort/heuristic_100sections/sampleA.hdf'
+# crag_path = '/raid/julia/documents/Dropbox/best_effort/heuristic_25sections/sampleA_bestEffort.hdf'
 
 model_dir = '/raid/julia/projects/fragment_embedding/nn_training/sampleArank3model_III/221238/'
-outputfile = '/raid/julia/projects/fragment_embedding/vanessa_crag/feature_output/sampleA_heur25.hdf'
+outputfile = '/raid/julia/projects/fragment_embedding/vanessa_crag/feature_output/sampleA_heur100.hdf'
 dataset = '/raid/julia/projects/fragment_embedding/vanessa_crag/heuristics100/triplets_rank7/sampleA.h5'
 CALCULATE_DISTANCE = True
 PRINT_DISTANCE = True

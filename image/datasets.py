@@ -255,6 +255,8 @@ class DatasetGen(object):
         clabels = list(self.channel_map.keys())
         cpositions = list(self.channel_map.values())
 
+        # print(imh, imw, clabels, cpositions)
+        # print(self.conf.padding, self.conf.normalise)
 
         # Insert data buffer information
         for i in range(len(slices)):
@@ -270,6 +272,8 @@ class DatasetGen(object):
 
         # Add buffer counter
         self.count += 1
+
+
 
     def _add_label(self, label):
         """ Adds a label into the buffer """

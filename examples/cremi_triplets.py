@@ -29,7 +29,7 @@ excluded = [
 
 # root_output = '/DataDisk/morad/all/datasets'    # Destination root output
 # root_output = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets/'
-root_output = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy/'
+root_output = '/raid/julia/projects/fragment_embedding/vanessa_crag/cremi_besteffort_van/triplets_toy2/'
 create_dir(root_output)
 data_config = 'data/confs/data.conf'    # Change data settings according to needs
 
